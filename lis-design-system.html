@@ -1,0 +1,1733 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LIS Design System — Medical UI Mockup</title>
+<style>
+/* ============================================
+   DESIGN TOKENS
+   ============================================ */
+:root {
+  --primary: #2563EB;
+  --primary-light: #DBEAFE;
+  --primary-dark: #1D4ED8;
+  --teal: #14B8A6;
+  --teal-light: #CCFBF1;
+  --teal-dark: #0F766E;
+  --success: #16A34A;
+  --success-light: #DCFCE7;
+  --warning: #D97706;
+  --warning-light: #FEF3C7;
+  --danger: #DC2626;
+  --danger-light: #FEE2E2;
+  --purple: #7C3AED;
+  --purple-light: #EDE9FE;
+
+  --bg: #F8FAFC;
+  --bg-card: #FFFFFF;
+  --bg-sidebar: #FFFFFF;
+  --border: #E2E8F0;
+  --text: #0F172A;
+  --text-muted: #64748B;
+  --text-light: #94A3B8;
+
+  --radius-sm: 6px;
+  --radius: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+
+  --shadow-sm: 0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+  --shadow: 0 4px 12px rgba(0,0,0,.06), 0 1px 3px rgba(0,0,0,.04);
+  --shadow-lg: 0 10px 30px rgba(0,0,0,.08), 0 4px 8px rgba(0,0,0,.04);
+
+  --sidebar-w: 240px;
+  --topbar-h: 60px;
+  --font: 'Segoe UI', Tahoma, Arial, sans-serif;
+}
+
+[data-theme="dark"] {
+  --bg: #0F172A;
+  --bg-card: #1E293B;
+  --bg-sidebar: #1E293B;
+  --border: #334155;
+  --text: #F1F5F9;
+  --text-muted: #94A3B8;
+  --text-light: #64748B;
+  --primary-light: #1e3a8a30;
+  --teal-light: #134e4a30;
+  --success-light: #14532d30;
+  --warning-light: #78350f30;
+  --danger-light: #7f1d1d30;
+  --purple-light: #4c1d9530;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,.3);
+  --shadow: 0 4px 12px rgba(0,0,0,.3);
+  --shadow-lg: 0 10px 30px rgba(0,0,0,.4);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: var(--font); background: var(--bg); color: var(--text); font-size: 14px; min-height: 100vh; display: flex; transition: background .3s, color .3s; }
+
+/* SCROLLBAR */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+
+/* ============================================
+   LAYOUT
+   ============================================ */
+.app-shell { display: flex; width: 100%; min-height: 100vh; }
+
+/* SIDEBAR */
+.sidebar {
+  width: var(--sidebar-w);
+  background: var(--bg-sidebar);
+  border-left: 1px solid var(--border);
+  display: flex; flex-direction: column;
+  position: fixed; right: 0; top: 0; bottom: 0; z-index: 100;
+  transition: background .3s, border-color .3s;
+}
+.sidebar-brand {
+  height: var(--topbar-h);
+  display: flex; align-items: center; gap: 10px;
+  padding: 0 18px;
+  border-bottom: 1px solid var(--border);
+}
+.brand-icon {
+  width: 34px; height: 34px; border-radius: var(--radius-sm);
+  background: linear-gradient(135deg, var(--primary), var(--teal));
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; font-size: 16px; flex-shrink: 0;
+}
+.brand-text { font-weight: 700; font-size: 15px; color: var(--text); }
+.brand-sub { font-size: 10px; color: var(--text-muted); }
+
+.sidebar-nav { flex: 1; overflow-y: auto; padding: 12px 8px; }
+.nav-section { margin-bottom: 20px; }
+.nav-label { font-size: 10px; font-weight: 700; color: var(--text-light); letter-spacing: .08em; text-transform: uppercase; padding: 0 10px; margin-bottom: 4px; }
+.nav-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 10px; border-radius: var(--radius-sm);
+  cursor: pointer; color: var(--text-muted);
+  font-size: 13.5px; font-weight: 500;
+  transition: all .15s;
+  margin-bottom: 1px;
+  position: relative;
+}
+.nav-item:hover { background: var(--primary-light); color: var(--primary); }
+.nav-item.active { background: var(--primary-light); color: var(--primary); font-weight: 600; }
+.nav-item.active::before {
+  content: ''; position: absolute; right: 0; top: 6px; bottom: 6px;
+  width: 3px; background: var(--primary); border-radius: 10px 0 0 10px;
+}
+.nav-icon { font-size: 16px; width: 20px; text-align: center; }
+.nav-badge {
+  margin-right: auto; background: var(--danger); color: #fff;
+  font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 99px;
+}
+
+.sidebar-footer {
+  padding: 12px 8px; border-top: 1px solid var(--border);
+}
+.user-card {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 10px; border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+.user-avatar {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary), var(--teal));
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; font-weight: 700; font-size: 12px; flex-shrink: 0;
+}
+.user-info { flex: 1; min-width: 0; }
+.user-name { font-size: 13px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.user-role { font-size: 11px; color: var(--text-muted); }
+
+/* MAIN */
+.main { margin-right: var(--sidebar-w); flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
+
+/* TOPBAR */
+.topbar {
+  height: var(--topbar-h); background: var(--bg-card);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 12px;
+  padding: 0 24px;
+  position: sticky; top: 0; z-index: 50;
+  transition: background .3s;
+}
+.page-title { font-size: 16px; font-weight: 700; color: var(--text); flex: 1; }
+.topbar-actions { display: flex; align-items: center; gap: 8px; }
+
+/* SEARCH BAR */
+.search-box {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 6px 12px;
+  width: 220px; transition: border-color .2s;
+}
+.search-box:focus-within { border-color: var(--primary); }
+.search-box input { border: none; background: transparent; font-size: 13px; color: var(--text); outline: none; width: 100%; font-family: var(--font); }
+.search-box input::placeholder { color: var(--text-light); }
+
+/* BUTTONS */
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 14px; border-radius: var(--radius-sm);
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  border: none; transition: all .15s; font-family: var(--font);
+  white-space: nowrap;
+}
+.btn-primary { background: var(--primary); color: #fff; }
+.btn-primary:hover { background: var(--primary-dark); }
+.btn-secondary { background: var(--bg); border: 1px solid var(--border); color: var(--text-muted); }
+.btn-secondary:hover { border-color: var(--primary); color: var(--primary); }
+.btn-ghost { background: transparent; color: var(--text-muted); padding: 7px 10px; }
+.btn-ghost:hover { background: var(--primary-light); color: var(--primary); }
+.btn-icon { padding: 7px; }
+.btn-teal { background: var(--teal); color: #fff; }
+.btn-teal:hover { background: var(--teal-dark); }
+.btn-danger { background: var(--danger-light); color: var(--danger); }
+.btn-danger:hover { background: var(--danger); color: #fff; }
+.btn-success { background: var(--success-light); color: var(--success); }
+.btn-success:hover { background: var(--success); color: #fff; }
+
+/* ICON BUTTON */
+.icon-btn {
+  width: 34px; height: 34px; border-radius: var(--radius-sm);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; background: var(--bg); border: 1px solid var(--border);
+  color: var(--text-muted); font-size: 16px; transition: all .15s;
+}
+.icon-btn:hover { border-color: var(--primary); color: var(--primary); }
+.icon-btn.notif { position: relative; }
+.icon-btn.notif::after {
+  content: ''; position: absolute; top: 6px; right: 6px;
+  width: 7px; height: 7px; background: var(--danger);
+  border-radius: 50%; border: 2px solid var(--bg-card);
+}
+
+/* CONTENT */
+.content { flex: 1; padding: 24px; overflow-y: auto; }
+
+/* ============================================
+   PAGES
+   ============================================ */
+.page { display: none; animation: fadeIn .2s ease; }
+.page.active { display: block; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+/* ============================================
+   DASHBOARD PAGE
+   ============================================ */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px; margin-bottom: 24px;
+}
+.stat-card {
+  background: var(--bg-card); border-radius: var(--radius);
+  padding: 20px; box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border);
+  display: flex; gap: 14px; align-items: flex-start;
+  transition: box-shadow .2s, transform .2s;
+  cursor: default;
+}
+.stat-card:hover { box-shadow: var(--shadow); transform: translateY(-1px); }
+.stat-icon {
+  width: 44px; height: 44px; border-radius: var(--radius-sm);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; flex-shrink: 0;
+}
+.stat-body { flex: 1; }
+.stat-value { font-size: 26px; font-weight: 800; color: var(--text); line-height: 1; }
+.stat-label { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+.stat-trend { font-size: 11px; margin-top: 6px; display: flex; align-items: center; gap: 3px; font-weight: 600; }
+.trend-up { color: var(--success); }
+.trend-down { color: var(--danger); }
+
+/* CHARTS GRID */
+.charts-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 24px; }
+
+/* CARD */
+.card {
+  background: var(--bg-card); border-radius: var(--radius);
+  border: 1px solid var(--border); box-shadow: var(--shadow-sm);
+}
+.card-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 20px; border-bottom: 1px solid var(--border);
+}
+.card-title { font-size: 14px; font-weight: 700; color: var(--text); }
+.card-subtitle { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+.card-body { padding: 20px; }
+
+/* BAR CHART */
+.bar-chart { display: flex; align-items: flex-end; gap: 8px; height: 140px; }
+.bar-group { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.bar-wrap { flex: 1; width: 100%; display: flex; align-items: flex-end; }
+.bar {
+  width: 100%; border-radius: 4px 4px 0 0;
+  transition: filter .2s;
+}
+.bar:hover { filter: brightness(0.9); }
+.bar-label { font-size: 10px; color: var(--text-light); }
+
+/* DONUT CHART */
+.donut-wrap { display: flex; flex-direction: column; align-items: center; padding: 16px; }
+.donut-svg { width: 120px; height: 120px; }
+.donut-legend { margin-top: 12px; width: 100%; }
+.legend-item { display: flex; align-items: center; gap: 8px; padding: 4px 0; }
+.legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.legend-label { font-size: 12px; color: var(--text-muted); flex: 1; }
+.legend-val { font-size: 12px; font-weight: 700; color: var(--text); }
+
+/* RECENT TABLE */
+.data-table { width: 100%; border-collapse: collapse; }
+.data-table th {
+  text-align: right; font-size: 11px; font-weight: 700;
+  color: var(--text-light); text-transform: uppercase; letter-spacing: .05em;
+  padding: 10px 16px; background: var(--bg);
+  border-bottom: 1px solid var(--border);
+}
+.data-table td {
+  padding: 12px 16px; border-bottom: 1px solid var(--border);
+  color: var(--text); font-size: 13px;
+  transition: background .1s;
+}
+.data-table tr:last-child td { border-bottom: none; }
+.data-table tbody tr:hover td { background: var(--primary-light); }
+.data-table th:first-child, .data-table td:first-child { padding-right: 20px; }
+.data-table th:last-child, .data-table td:last-child { padding-left: 20px; }
+
+/* BADGES */
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 8px; border-radius: 99px;
+  font-size: 11px; font-weight: 600;
+}
+.badge-pending { background: var(--warning-light); color: var(--warning); }
+.badge-completed { background: var(--success-light); color: var(--success); }
+.badge-progress { background: var(--primary-light); color: var(--primary); }
+.badge-rejected { background: var(--danger-light); color: var(--danger); }
+.badge-resulted { background: var(--teal-light); color: var(--teal-dark); }
+.badge-stat { background: var(--danger-light); color: var(--danger); }
+.badge-routine { background: var(--bg); color: var(--text-muted); border: 1px solid var(--border); }
+.badge-urgent { background: var(--warning-light); color: var(--warning); }
+
+/* PRIORITY DOT */
+.priority-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+.dot-stat { background: var(--danger); }
+.dot-urgent { background: var(--warning); }
+.dot-routine { background: var(--text-light); }
+
+/* ============================================
+   PATIENTS PAGE
+   ============================================ */
+.page-toolbar {
+  display: flex; align-items: center; gap: 12px; margin-bottom: 20px;
+}
+.page-toolbar .search-box { width: 280px; }
+.filters { display: flex; gap: 8px; flex: 1; }
+.filter-chip {
+  padding: 5px 12px; border-radius: 99px;
+  border: 1px solid var(--border); background: var(--bg-card);
+  font-size: 12px; font-weight: 600; color: var(--text-muted);
+  cursor: pointer; transition: all .15s;
+}
+.filter-chip.active { border-color: var(--primary); background: var(--primary-light); color: var(--primary); }
+.filter-chip:hover { border-color: var(--primary); color: var(--primary); }
+
+/* PATIENT CARD GRID */
+.patient-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.patient-card {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 18px;
+  cursor: pointer; transition: all .2s; box-shadow: var(--shadow-sm);
+}
+.patient-card:hover { box-shadow: var(--shadow); border-color: var(--primary); transform: translateY(-1px); }
+.patient-top { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 14px; }
+.patient-avatar {
+  width: 42px; height: 42px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 16px; color: #fff; flex-shrink: 0;
+}
+.patient-info { flex: 1; }
+.patient-name { font-size: 14px; font-weight: 700; color: var(--text); }
+.patient-mrn { font-size: 11px; color: var(--text-muted); margin-top: 2px; font-family: monospace; }
+.patient-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.meta-item { }
+.meta-label { font-size: 10px; color: var(--text-light); text-transform: uppercase; letter-spacing: .05em; }
+.meta-value { font-size: 12px; font-weight: 600; color: var(--text); margin-top: 2px; }
+.patient-footer { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+
+/* ============================================
+   ORDERS / TESTS PAGE
+   ============================================ */
+.order-row-card {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--radius); margin-bottom: 10px;
+  overflow: hidden; transition: box-shadow .2s;
+  cursor: pointer;
+}
+.order-row-card:hover { box-shadow: var(--shadow); border-color: var(--primary); }
+.order-main { display: flex; align-items: center; gap: 14px; padding: 14px 18px; }
+.order-num { font-family: monospace; font-size: 12px; color: var(--text-muted); width: 140px; flex-shrink: 0; }
+.order-patient { flex: 1; }
+.order-patient-name { font-size: 13px; font-weight: 700; color: var(--text); }
+.order-patient-mrn { font-size: 11px; color: var(--text-muted); }
+.order-tests-count {
+  background: var(--primary-light); color: var(--primary);
+  font-size: 12px; font-weight: 700;
+  padding: 2px 8px; border-radius: 99px;
+}
+.order-time { font-size: 11px; color: var(--text-light); width: 100px; text-align: left; flex-shrink: 0; }
+
+/* RESULTS SECTION */
+.result-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 16px; border-radius: var(--radius-sm);
+  margin-bottom: 6px; background: var(--bg);
+  border: 1px solid var(--border);
+}
+.result-test { flex: 1; font-size: 13px; font-weight: 600; color: var(--text); }
+.result-value { font-size: 13px; font-family: monospace; color: var(--text); width: 80px; text-align: center; }
+.result-range { font-size: 11px; color: var(--text-muted); width: 80px; text-align: center; }
+.result-flag { width: 70px; text-align: center; }
+
+/* ============================================
+   FORM ELEMENTS
+   ============================================ */
+.form-group { margin-bottom: 16px; }
+.form-label { font-size: 12px; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 6px; }
+.form-input {
+  width: 100%; padding: 8px 12px; border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border); background: var(--bg);
+  color: var(--text); font-size: 13px; font-family: var(--font);
+  outline: none; transition: border-color .2s;
+}
+.form-input:focus { border-color: var(--primary); background: var(--bg-card); }
+.form-input::placeholder { color: var(--text-light); }
+.form-grid { display: grid; gap: 16px; }
+.form-grid-2 { grid-template-columns: 1fr 1fr; }
+.form-grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+
+/* MODAL */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,.4);
+  backdrop-filter: blur(4px); z-index: 200;
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+}
+.modal {
+  background: var(--bg-card); border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg); width: 100%; max-width: 520px;
+  animation: modalIn .2s ease;
+}
+@keyframes modalIn { from { opacity:0; transform: scale(.97) translateY(8px); } to { opacity:1; transform: scale(1) translateY(0); } }
+.modal-header {
+  padding: 20px 24px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.modal-title { font-size: 16px; font-weight: 700; color: var(--text); }
+.modal-body { padding: 24px; }
+.modal-footer { padding: 16px 24px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 8px; }
+
+/* SKELETON */
+.skeleton {
+  background: linear-gradient(90deg, var(--border) 0%, var(--bg) 50%, var(--border) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: var(--radius-sm);
+}
+@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+/* TOAST */
+.toast-container { position: fixed; bottom: 24px; left: 24px; z-index: 999; display: flex; flex-direction: column; gap: 8px; }
+.toast {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 12px 16px;
+  box-shadow: var(--shadow-lg); min-width: 280px;
+  display: flex; align-items: center; gap: 10px;
+  animation: toastIn .3s ease;
+}
+@keyframes toastIn { from { opacity:0; transform: translateX(-20px); } to { opacity:1; transform: translateX(0); } }
+.toast-icon { font-size: 18px; }
+.toast-text { flex: 1; font-size: 13px; font-weight: 600; color: var(--text); }
+.toast-success { border-color: var(--success); }
+.toast-success .toast-icon { color: var(--success); }
+.toast-error { border-color: var(--danger); }
+.toast-error .toast-icon { color: var(--danger); }
+.toast-info { border-color: var(--primary); }
+.toast-info .toast-icon { color: var(--primary); }
+
+/* DASHBOARD QUICK ACTIONS */
+.quick-actions { display: flex; gap: 10px; margin-bottom: 24px; flex-wrap: wrap; }
+.quick-action {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 10px 16px;
+  cursor: pointer; transition: all .15s; box-shadow: var(--shadow-sm);
+  font-size: 13px; font-weight: 600; color: var(--text-muted);
+}
+.quick-action:hover { border-color: var(--primary); color: var(--primary); background: var(--primary-light); }
+.qa-icon { font-size: 18px; }
+
+/* TIMELINE */
+.timeline { position: relative; }
+.timeline-item { display: flex; gap: 12px; margin-bottom: 16px; }
+.timeline-dot { width: 10px; height: 10px; border-radius: 50%; margin-top: 4px; flex-shrink: 0; position: relative; }
+.timeline-dot::before { content: ''; position: absolute; top: 10px; right: 4px; width: 2px; height: calc(100% + 6px); background: var(--border); }
+.timeline-item:last-child .timeline-dot::before { display: none; }
+.timeline-content { flex: 1; }
+.timeline-title { font-size: 13px; font-weight: 600; color: var(--text); }
+.timeline-time { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+/* NOTIFICATION BADGE */
+.notif-count {
+  position: absolute; top: -4px; right: -4px;
+  background: var(--danger); color: #fff;
+  font-size: 9px; font-weight: 800; padding: 1px 4px;
+  border-radius: 99px; border: 2px solid var(--bg-card);
+}
+
+/* THEME TOGGLE */
+.theme-toggle { cursor: pointer; }
+
+/* TABS */
+.tab-list { display: flex; gap: 2px; background: var(--bg); border-radius: var(--radius-sm); padding: 3px; margin-bottom: 20px; border: 1px solid var(--border); }
+.tab-item {
+  flex: 1; padding: 7px 12px; border-radius: var(--radius-sm);
+  font-size: 13px; font-weight: 600; color: var(--text-muted);
+  cursor: pointer; text-align: center; transition: all .15s;
+}
+.tab-item.active { background: var(--bg-card); color: var(--primary); box-shadow: var(--shadow-sm); }
+
+/* PROGRESS BAR */
+.progress-bar { height: 6px; background: var(--border); border-radius: 99px; overflow: hidden; }
+.progress-fill { height: 100%; border-radius: 99px; transition: width .5s ease; }
+
+/* ============================================
+   REPORTS PAGE
+   ============================================ */
+.report-card {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 20px;
+  display: flex; gap: 16px; align-items: flex-start;
+  cursor: pointer; transition: all .2s; box-shadow: var(--shadow-sm);
+  margin-bottom: 12px;
+}
+.report-card:hover { box-shadow: var(--shadow); border-color: var(--primary); }
+.report-icon { width: 44px; height: 44px; border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+.report-info { flex: 1; }
+.report-title { font-size: 14px; font-weight: 700; color: var(--text); }
+.report-desc { font-size: 12px; color: var(--text-muted); margin-top: 3px; }
+.report-meta { font-size: 11px; color: var(--text-light); margin-top: 6px; }
+
+/* KPI ROW */
+.kpi-row { display: flex; gap: 12px; margin-bottom: 24px; }
+.kpi-item {
+  flex: 1; background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 16px; text-align: center;
+  box-shadow: var(--shadow-sm);
+}
+.kpi-value { font-size: 24px; font-weight: 800; }
+.kpi-label { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+
+/* SETTINGS PAGE */
+.settings-grid { display: grid; grid-template-columns: 220px 1fr; gap: 20px; }
+.settings-nav { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 8px; height: fit-content; }
+.settings-nav-item { padding: 9px 12px; border-radius: var(--radius-sm); cursor: pointer; font-size: 13px; font-weight: 500; color: var(--text-muted); transition: all .15s; }
+.settings-nav-item:hover { background: var(--primary-light); color: var(--primary); }
+.settings-nav-item.active { background: var(--primary-light); color: var(--primary); font-weight: 700; }
+.settings-section { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); }
+.settings-section-header { padding: 18px 22px; border-bottom: 1px solid var(--border); }
+.settings-section-body { padding: 22px; }
+.settings-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--border); }
+.settings-row:last-child { border-bottom: none; }
+.settings-row-label { font-size: 13px; font-weight: 600; color: var(--text); }
+.settings-row-desc { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+.toggle {
+  width: 40px; height: 22px; border-radius: 99px; background: var(--border);
+  position: relative; cursor: pointer; transition: background .2s;
+}
+.toggle.on { background: var(--primary); }
+.toggle::after {
+  content: ''; position: absolute; top: 3px; right: 3px;
+  width: 16px; height: 16px; border-radius: 50%; background: white;
+  transition: transform .2s;
+}
+.toggle.on::after { transform: translateX(-18px); }
+
+/* RESPONSIVE adjustments */
+@media (max-width: 1200px) {
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .patient-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* PAGE HEADER */
+.page-header { margin-bottom: 22px; }
+.page-header-title { font-size: 22px; font-weight: 800; color: var(--text); }
+.page-header-sub { font-size: 13px; color: var(--text-muted); margin-top: 3px; }
+
+/* DIVIDER */
+.divider { height: 1px; background: var(--border); margin: 16px 0; }
+
+/* SECTION TITLE */
+.section-title { font-size: 13px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: .07em; margin-bottom: 12px; }
+
+/* ALERT */
+.alert { padding: 12px 16px; border-radius: var(--radius-sm); font-size: 13px; display: flex; align-items: center; gap: 10px; border: 1px solid; }
+.alert-info { background: var(--primary-light); color: var(--primary); border-color: var(--primary); }
+.alert-success { background: var(--success-light); color: var(--success); border-color: var(--success); }
+.alert-warning { background: var(--warning-light); color: var(--warning); border-color: var(--warning); }
+</style>
+</head>
+<body>
+<div class="app-shell">
+
+<!-- ======================== SIDEBAR ======================== -->
+<aside class="sidebar">
+  <div class="sidebar-brand">
+    <div class="brand-icon">🔬</div>
+    <div>
+      <div class="brand-text">MedLab LIS</div>
+      <div class="brand-sub">v2.0 — نظام المختبر</div>
+    </div>
+  </div>
+
+  <nav class="sidebar-nav">
+    <div class="nav-section">
+      <div class="nav-label">الرئيسية</div>
+      <div class="nav-item active" onclick="showPage('dashboard', this)">
+        <span class="nav-icon">📊</span> لوحة التحكم
+      </div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-label">إدارة المختبر</div>
+      <div class="nav-item" onclick="showPage('patients', this)">
+        <span class="nav-icon">👥</span> المرضى
+      </div>
+      <div class="nav-item" onclick="showPage('orders', this)">
+        <span class="nav-icon">📋</span> الطلبات
+        <span class="nav-badge">3</span>
+      </div>
+      <div class="nav-item" onclick="showPage('samples', this)">
+        <span class="nav-icon">🧪</span> العينات
+      </div>
+      <div class="nav-item" onclick="showPage('results', this)">
+        <span class="nav-icon">📈</span> النتائج
+      </div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-label">الإعداد</div>
+      <div class="nav-item" onclick="showPage('services', this)">
+        <span class="nav-icon">⚗️</span> الخدمات المخبرية
+      </div>
+      <div class="nav-item" onclick="showPage('reports', this)">
+        <span class="nav-icon">📄</span> التقارير
+      </div>
+      <div class="nav-item" onclick="showPage('notifications', this)">
+        <span class="nav-icon">🔔</span> الإشعارات
+        <span class="nav-badge">5</span>
+      </div>
+      <div class="nav-item" onclick="showPage('settings', this)">
+        <span class="nav-icon">⚙️</span> الإعدادات
+      </div>
+    </div>
+  </nav>
+
+  <div class="sidebar-footer">
+    <div class="user-card">
+      <div class="user-avatar">أ</div>
+      <div class="user-info">
+        <div class="user-name">د. أحمد العلي</div>
+        <div class="user-role">مدير المختبر</div>
+      </div>
+      <span style="color:var(--text-light);cursor:pointer" onclick="toggleTheme()" title="تبديل الوضع">🌙</span>
+    </div>
+  </div>
+</aside>
+
+<!-- ======================== MAIN ======================== -->
+<div class="main">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="page-title" id="page-title">لوحة التحكم</div>
+    <div class="topbar-actions">
+      <div class="search-box">
+        <span style="color:var(--text-light);font-size:14px">🔍</span>
+        <input type="text" placeholder="بحث عن مريض، طلب...">
+      </div>
+      <div class="icon-btn notif" title="الإشعارات" onclick="showPage('notifications', null)">🔔</div>
+      <div class="icon-btn" title="تبديل الوضع" onclick="toggleTheme()">🌓</div>
+      <button class="btn btn-primary" onclick="showModal('add-patient')">
+        ＋ طلب جديد
+      </button>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- ==================== DASHBOARD ==================== -->
+    <div class="page active" id="page-dashboard">
+
+      <div class="page-header">
+        <div class="page-header-title">مرحباً، د. أحمد 👋</div>
+        <div class="page-header-sub">الإثنين، 30 مارس 2026 — نظرة عامة على أداء المختبر</div>
+      </div>
+
+      <!-- QUICK ACTIONS -->
+      <div class="quick-actions">
+        <div class="quick-action" onclick="showPage('orders', null); showModal('add-order')">
+          <span class="qa-icon">➕</span> طلب فحص جديد
+        </div>
+        <div class="quick-action" onclick="showPage('patients', null)">
+          <span class="qa-icon">👤</span> تسجيل مريض
+        </div>
+        <div class="quick-action" onclick="showPage('results', null)">
+          <span class="qa-icon">✏️</span> إدخال نتيجة
+        </div>
+        <div class="quick-action" onclick="showPage('reports', null)">
+          <span class="qa-icon">📄</span> طباعة تقرير
+        </div>
+      </div>
+
+      <!-- STATS -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon" style="background:var(--primary-light)">🩺</div>
+          <div class="stat-body">
+            <div class="stat-value">248</div>
+            <div class="stat-label">إجمالي المرضى</div>
+            <div class="stat-trend trend-up">↑ 12% هذا الشهر</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background:var(--warning-light)">📋</div>
+          <div class="stat-body">
+            <div class="stat-value">43</div>
+            <div class="stat-label">طلبات اليوم</div>
+            <div class="stat-trend trend-up">↑ 8% أمس</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background:var(--teal-light)">🧪</div>
+          <div class="stat-body">
+            <div class="stat-value">127</div>
+            <div class="stat-label">فحوصات معلقة</div>
+            <div class="stat-trend trend-down">↓ 5% أمس</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background:var(--success-light)">✅</div>
+          <div class="stat-body">
+            <div class="stat-value">312</div>
+            <div class="stat-label">نتائج مكتملة</div>
+            <div class="stat-trend trend-up">↑ 18% أمس</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CHARTS -->
+      <div class="charts-grid">
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">الفحوصات اليومية — مارس 2026</div>
+              <div class="card-subtitle">توزيع الطلبات والنتائج خلال الأسبوع</div>
+            </div>
+            <div style="display:flex;gap:6px">
+              <span class="badge badge-progress">هذا الأسبوع</span>
+            </div>
+          </div>
+          <div class="card-body">
+            <div style="display:flex;gap:12px;margin-bottom:12px">
+              <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-muted)">
+                <div style="width:10px;height:10px;background:var(--primary);border-radius:2px"></div> طلبات
+              </div>
+              <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-muted)">
+                <div style="width:10px;height:10px;background:var(--teal);border-radius:2px"></div> نتائج
+              </div>
+            </div>
+            <div class="bar-chart">
+              <div class="bar-group">
+                <div class="bar-wrap"><div class="bar" style="height:60%;background:var(--primary);opacity:.8"></div></div>
+                <div class="bar-label">السبت</div>
+              </div>
+              <div class="bar-group">
+                <div class="bar-wrap"><div class="bar" style="height:45%;background:var(--teal);opacity:.8"></div></div>
+                <div class="bar-label">السبت</div>
+              </div>
+              <div class="bar-group">
+                <div class="bar-wrap"><div class="bar" style="height:80%;background:var(--primary)"></div></div>
+                <div class="bar-label">الأحد</div>
+              </div>
+              <div class="bar-group">
+                <div class="bar-wrap"><div class="bar" style="height:65%;background:var(--teal)"></div></div>
+                <div class="bar-label">الأحد</div>
+              </div>
+              <div class="bar-group">
+                <div class="bar-wrap"><div class="bar" style="height:90%;background:var(--primary)"></div></div>
+                <div class="bar-label">الإثنين</div>
+              </div>
+              <div class="bar-group">
+                <div class="bar-wrap"><div class="bar" style="height:72%;background:var(--teal)"></div></div>
+                <div class="bar-label">الإثنين</div>
+              </div>
+              <div class="bar-group">
+                <div class="bar-wrap"><div class="bar" style="height:55%;background:var(--primary);opacity:.7"></div></div>
+                <div class="bar-label">الثلاثاء</div>
+              </div>
+              <div class="bar-group">
+                <div class="bar-wrap"><div class="bar" style="height:48%;background:var(--teal);opacity:.7"></div></div>
+                <div class="bar-label">الثلاثاء</div>
+              </div>
+              <div class="bar-group">
+                <div class="bar-wrap"><div class="bar" style="height:70%;background:var(--primary)"></div></div>
+                <div class="bar-label">الأربعاء</div>
+              </div>
+              <div class="bar-group">
+                <div class="bar-wrap"><div class="bar" style="height:58%;background:var(--teal)"></div></div>
+                <div class="bar-label">الأربعاء</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">توزيع الحالات</div>
+              <div class="card-subtitle">حسب الحالة الحالية</div>
+            </div>
+          </div>
+          <div class="donut-wrap">
+            <svg class="donut-svg" viewBox="0 0 42 42">
+              <circle cx="21" cy="21" r="15.9" fill="transparent" stroke="var(--primary)" stroke-width="5" stroke-dasharray="40 60" stroke-dashoffset="25"/>
+              <circle cx="21" cy="21" r="15.9" fill="transparent" stroke="var(--teal)" stroke-width="5" stroke-dasharray="30 70" stroke-dashoffset="-15"/>
+              <circle cx="21" cy="21" r="15.9" fill="transparent" stroke="var(--warning)" stroke-width="5" stroke-dasharray="20 80" stroke-dashoffset="-45"/>
+              <circle cx="21" cy="21" r="15.9" fill="transparent" stroke="var(--success)" stroke-width="5" stroke-dasharray="10 90" stroke-dashoffset="-65"/>
+              <text x="21" y="22" text-anchor="middle" font-size="4" font-weight="bold" fill="var(--text)">312</text>
+              <text x="21" y="26" text-anchor="middle" font-size="2.5" fill="var(--text-muted)">فحص</text>
+            </svg>
+            <div class="donut-legend">
+              <div class="legend-item">
+                <div class="legend-dot" style="background:var(--primary)"></div>
+                <div class="legend-label">معلق</div>
+                <div class="legend-val">127</div>
+              </div>
+              <div class="legend-item">
+                <div class="legend-dot" style="background:var(--teal)"></div>
+                <div class="legend-label">جارٍ</div>
+                <div class="legend-val">93</div>
+              </div>
+              <div class="legend-item">
+                <div class="legend-dot" style="background:var(--warning)"></div>
+                <div class="legend-label">مكتمل</div>
+                <div class="legend-val">62</div>
+              </div>
+              <div class="legend-item">
+                <div class="legend-dot" style="background:var(--success)"></div>
+                <div class="legend-label">محقق</div>
+                <div class="legend-val">30</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ALERT -->
+      <div class="alert alert-warning" style="margin-bottom:16px">
+        <span>⚠️</span>
+        <span><b>3 نتائج حرجة</b> تستدعي مراجعة فورية — <a href="#" style="color:inherit;font-weight:700">عرض الحالات</a></span>
+      </div>
+
+      <!-- RECENT ORDERS -->
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">آخر الطلبات</div>
+            <div class="card-subtitle">الطلبات المستلمة اليوم</div>
+          </div>
+          <button class="btn btn-secondary" onclick="showPage('orders', null)">عرض الكل</button>
+        </div>
+        <div style="overflow:auto">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>رقم الطلب</th>
+                <th>المريض</th>
+                <th>الأولوية</th>
+                <th>عدد الفحوصات</th>
+                <th>الحالة</th>
+                <th>الوقت</th>
+                <th>إجراء</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code style="font-size:11px;color:var(--text-muted)">ORD-20260330-0043</code></td>
+                <td>
+                  <div style="font-weight:700">محمد سالم</div>
+                  <div style="font-size:11px;color:var(--text-muted)">P-001</div>
+                </td>
+                <td><span class="badge badge-stat"><span class="priority-dot dot-stat"></span> STAT</span></td>
+                <td><span class="order-tests-count">5 فحوصات</span></td>
+                <td><span class="badge badge-pending">معلق</span></td>
+                <td style="color:var(--text-muted);font-size:11px">منذ 12 د</td>
+                <td><button class="btn btn-ghost btn-icon">👁</button></td>
+              </tr>
+              <tr>
+                <td><code style="font-size:11px;color:var(--text-muted)">ORD-20260330-0042</code></td>
+                <td>
+                  <div style="font-weight:700">فاطمة علي</div>
+                  <div style="font-size:11px;color:var(--text-muted)">P-002</div>
+                </td>
+                <td><span class="badge badge-routine">ROUTINE</span></td>
+                <td><span class="order-tests-count">3 فحوصات</span></td>
+                <td><span class="badge badge-resulted">تمت النتائج</span></td>
+                <td style="color:var(--text-muted);font-size:11px">منذ 28 د</td>
+                <td><button class="btn btn-ghost btn-icon">👁</button></td>
+              </tr>
+              <tr>
+                <td><code style="font-size:11px;color:var(--text-muted)">ORD-20260330-0041</code></td>
+                <td>
+                  <div style="font-weight:700">خالد محمود</div>
+                  <div style="font-size:11px;color:var(--text-muted)">P-007</div>
+                </td>
+                <td><span class="badge badge-urgent">URGENT</span></td>
+                <td><span class="order-tests-count">7 فحوصات</span></td>
+                <td><span class="badge badge-progress">جارٍ</span></td>
+                <td style="color:var(--text-muted);font-size:11px">منذ 45 د</td>
+                <td><button class="btn btn-ghost btn-icon">👁</button></td>
+              </tr>
+              <tr>
+                <td><code style="font-size:11px;color:var(--text-muted)">ORD-20260330-0040</code></td>
+                <td>
+                  <div style="font-weight:700">نورة حسن</div>
+                  <div style="font-size:11px;color:var(--text-muted)">P-011</div>
+                </td>
+                <td><span class="badge badge-routine">ROUTINE</span></td>
+                <td><span class="order-tests-count">2 فحوصات</span></td>
+                <td><span class="badge badge-completed">مكتمل</span></td>
+                <td style="color:var(--text-muted);font-size:11px">منذ 1 س</td>
+                <td><button class="btn btn-ghost btn-icon">👁</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ==================== PATIENTS ==================== -->
+    <div class="page" id="page-patients">
+      <div class="page-header">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start">
+          <div>
+            <div class="page-header-title">إدارة المرضى</div>
+            <div class="page-header-sub">248 مريض مسجل • آخر تحديث: اليوم</div>
+          </div>
+          <button class="btn btn-primary" onclick="showModal('add-patient')">＋ مريض جديد</button>
+        </div>
+      </div>
+
+      <div class="page-toolbar">
+        <div class="search-box" style="width:280px">
+          <span style="color:var(--text-light);font-size:14px">🔍</span>
+          <input type="text" placeholder="ابحث بالاسم، رقم الملف، الهاتف...">
+        </div>
+        <div class="filters">
+          <div class="filter-chip active">الكل (248)</div>
+          <div class="filter-chip">ذكر (142)</div>
+          <div class="filter-chip">أنثى (106)</div>
+          <div class="filter-chip">نتائج حرجة</div>
+        </div>
+        <button class="btn btn-secondary">⬇ تصدير</button>
+      </div>
+
+      <div class="patient-grid">
+        <!-- Patient Card 1 -->
+        <div class="patient-card" onclick="showToast('info','تفتح ملف المريض محمد سالم...')">
+          <div class="patient-top">
+            <div class="patient-avatar" style="background:linear-gradient(135deg,#2563EB,#14B8A6)">م</div>
+            <div class="patient-info">
+              <div class="patient-name">محمد سالم العمري</div>
+              <div class="patient-mrn">MRN: P-001 • ذكر</div>
+            </div>
+            <span class="badge badge-pending">معلق</span>
+          </div>
+          <div class="patient-meta">
+            <div class="meta-item">
+              <div class="meta-label">العمر</div>
+              <div class="meta-value">34 سنة</div>
+            </div>
+            <div class="meta-item">
+              <div class="meta-label">الهاتف</div>
+              <div class="meta-value">0501234567</div>
+            </div>
+            <div class="meta-item">
+              <div class="meta-label">آخر زيارة</div>
+              <div class="meta-value">اليوم</div>
+            </div>
+            <div class="meta-item">
+              <div class="meta-label">الطلبات</div>
+              <div class="meta-value">5 طلبات</div>
+            </div>
+          </div>
+          <div class="patient-footer">
+            <div>
+              <div class="progress-bar" style="width:120px">
+                <div class="progress-fill" style="width:60%;background:var(--warning)"></div>
+              </div>
+              <div style="font-size:10px;color:var(--text-muted);margin-top:3px">60% فحوصات مكتملة</div>
+            </div>
+            <div style="display:flex;gap:6px">
+              <button class="btn btn-ghost btn-icon">📋</button>
+              <button class="btn btn-ghost btn-icon">✏️</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Patient Card 2 -->
+        <div class="patient-card" onclick="showToast('info','تفتح ملف المريضة فاطمة علي...')">
+          <div class="patient-top">
+            <div class="patient-avatar" style="background:linear-gradient(135deg,#7C3AED,#EC4899)">ف</div>
+            <div class="patient-info">
+              <div class="patient-name">فاطمة علي الشمري</div>
+              <div class="patient-mrn">MRN: P-002 • أنثى</div>
+            </div>
+            <span class="badge badge-completed">مكتمل</span>
+          </div>
+          <div class="patient-meta">
+            <div class="meta-item">
+              <div class="meta-label">العمر</div>
+              <div class="meta-value">28 سنة</div>
+            </div>
+            <div class="meta-item">
+              <div class="meta-label">الهاتف</div>
+              <div class="meta-value">0557654321</div>
+            </div>
+            <div class="meta-item">
+              <div class="meta-label">آخر زيارة</div>
+              <div class="meta-value">أمس</div>
+            </div>
+            <div class="meta-item">
+              <div class="meta-label">الطلبات</div>
+              <div class="meta-value">2 طلبات</div>
+            </div>
+          </div>
+          <div class="patient-footer">
+            <div>
+              <div class="progress-bar" style="width:120px">
+                <div class="progress-fill" style="width:100%;background:var(--success)"></div>
+              </div>
+              <div style="font-size:10px;color:var(--text-muted);margin-top:3px">100% فحوصات مكتملة</div>
+            </div>
+            <div style="display:flex;gap:6px">
+              <button class="btn btn-success btn-icon" onclick="event.stopPropagation();showToast('success','جاري تنزيل تقرير PDF...')">📄</button>
+              <button class="btn btn-ghost btn-icon">✏️</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Patient Card 3 CRITICAL -->
+        <div class="patient-card" style="border-color:var(--danger)">
+          <div style="background:var(--danger-light);border-radius:var(--radius-sm);padding:6px 10px;margin-bottom:12px;font-size:11px;font-weight:700;color:var(--danger);display:flex;align-items:center;gap:5px">
+            🚨 نتيجة حرجة — يتطلب اتصالاً فورياً
+          </div>
+          <div class="patient-top">
+            <div class="patient-avatar" style="background:linear-gradient(135deg,#DC2626,#F97316)">خ</div>
+            <div class="patient-info">
+              <div class="patient-name">خالد محمود النجار</div>
+              <div class="patient-mrn">MRN: P-007 • ذكر</div>
+            </div>
+            <span class="badge badge-stat">STAT</span>
+          </div>
+          <div class="patient-meta">
+            <div class="meta-item">
+              <div class="meta-label">العمر</div>
+              <div class="meta-value">51 سنة</div>
+            </div>
+            <div class="meta-item">
+              <div class="meta-label">الهاتف</div>
+              <div class="meta-value">0509876543</div>
+            </div>
+            <div class="meta-item">
+              <div class="meta-label">آخر زيارة</div>
+              <div class="meta-value">اليوم</div>
+            </div>
+            <div class="meta-item">
+              <div class="meta-label">الطلبات</div>
+              <div class="meta-value">7 طلبات</div>
+            </div>
+          </div>
+          <div class="patient-footer">
+            <div>
+              <div class="progress-bar" style="width:120px">
+                <div class="progress-fill" style="width:40%;background:var(--primary)"></div>
+              </div>
+              <div style="font-size:10px;color:var(--text-muted);margin-top:3px">40% فحوصات مكتملة</div>
+            </div>
+            <div style="display:flex;gap:6px">
+              <button class="btn btn-danger btn-icon">📞</button>
+              <button class="btn btn-ghost btn-icon">✏️</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- SKELETON CARDS -->
+        <div class="patient-card" style="pointer-events:none">
+          <div style="display:flex;gap:12px;margin-bottom:14px">
+            <div class="skeleton" style="width:42px;height:42px;border-radius:50%"></div>
+            <div style="flex:1">
+              <div class="skeleton" style="height:14px;width:60%;margin-bottom:6px"></div>
+              <div class="skeleton" style="height:11px;width:40%"></div>
+            </div>
+          </div>
+          <div class="skeleton" style="height:60px"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== ORDERS ==================== -->
+    <div class="page" id="page-orders">
+      <div class="page-header">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start">
+          <div>
+            <div class="page-header-title">الطلبات</div>
+            <div class="page-header-sub">43 طلب اليوم • 3 معلقة تستدعي اهتماماً</div>
+          </div>
+          <button class="btn btn-primary" onclick="showModal('add-order')">＋ طلب جديد</button>
+        </div>
+      </div>
+
+      <div class="tab-list" style="max-width:500px">
+        <div class="tab-item active" onclick="setTab(this)">الكل (43)</div>
+        <div class="tab-item" onclick="setTab(this)">معلق (3)</div>
+        <div class="tab-item" onclick="setTab(this)">جارٍ (12)</div>
+        <div class="tab-item" onclick="setTab(this)">مكتمل (28)</div>
+      </div>
+
+      <div class="order-row-card" onclick="showToast('info','فتح تفاصيل الطلب ORD-0043...')">
+        <div class="order-main">
+          <div>
+            <span class="badge badge-stat">STAT</span>
+          </div>
+          <div class="order-num">ORD-20260330-0043</div>
+          <div class="order-patient">
+            <div class="order-patient-name">محمد سالم العمري</div>
+            <div class="order-patient-mrn">P-001 • د. علي حسين</div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <span class="badge badge-pending">معلق</span>
+            <span class="order-tests-count">5</span>
+          </div>
+          <div class="order-time">منذ 12 دقيقة</div>
+          <div style="display:flex;gap:6px">
+            <button class="btn btn-secondary" onclick="event.stopPropagation()">📋 التفاصيل</button>
+            <button class="btn btn-primary" onclick="event.stopPropagation();showToast('success','تم استلام العينة')">✓ استلام</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="order-row-card">
+        <div class="order-main">
+          <div><span class="badge badge-urgent">URGENT</span></div>
+          <div class="order-num">ORD-20260330-0041</div>
+          <div class="order-patient">
+            <div class="order-patient-name">خالد محمود النجار</div>
+            <div class="order-patient-mrn">P-007 • د. سارة أحمد</div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <span class="badge badge-progress">جارٍ</span>
+            <span class="order-tests-count">7</span>
+          </div>
+          <div class="order-time">منذ 45 دقيقة</div>
+          <div style="display:flex;gap:6px">
+            <button class="btn btn-secondary" onclick="event.stopPropagation()">📋 التفاصيل</button>
+            <button class="btn btn-teal" onclick="event.stopPropagation();showToast('info','فتح إدخال النتائج...')">✏️ نتيجة</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="order-row-card">
+        <div class="order-main">
+          <div><span class="badge badge-routine">ROUTINE</span></div>
+          <div class="order-num">ORD-20260330-0042</div>
+          <div class="order-patient">
+            <div class="order-patient-name">فاطمة علي الشمري</div>
+            <div class="order-patient-mrn">P-002 • د. محمد خالد</div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <span class="badge badge-resulted">تمت النتائج</span>
+            <span class="order-tests-count">3</span>
+          </div>
+          <div class="order-time">منذ 28 دقيقة</div>
+          <div style="display:flex;gap:6px">
+            <button class="btn btn-secondary" onclick="event.stopPropagation()">📋 التفاصيل</button>
+            <button class="btn btn-success" onclick="event.stopPropagation();showToast('success','جاري طباعة التقرير...')">📄 طباعة</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== RESULTS ==================== -->
+    <div class="page" id="page-results">
+      <div class="page-header">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start">
+          <div>
+            <div class="page-header-title">إدخال النتائج</div>
+            <div class="page-header-sub">127 فحص ينتظر إدخال النتائج</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 320px;gap:20px">
+        <div>
+          <!-- Test Row -->
+          <div class="card" style="margin-bottom:12px">
+            <div class="card-header">
+              <div>
+                <div class="card-title">محمد سالم — ORD-20260330-0043</div>
+                <div class="card-subtitle">بروكود: a791195e • نوع: دم • حالة: مستلم</div>
+              </div>
+              <span class="badge badge-stat">STAT</span>
+            </div>
+            <div class="card-body">
+              <!-- Result rows -->
+              <div class="result-row" style="border-color:var(--danger);background:var(--danger-light)">
+                <div class="result-test">
+                  <div style="font-weight:700">Thyroid Stimulating Hormone (TSH)</div>
+                  <div style="font-size:11px;color:var(--text-muted)">كود: TSH</div>
+                </div>
+                <div class="result-value">4.2</div>
+                <div class="result-range">0.4 – 4.0</div>
+                <div class="result-flag"><span class="badge badge-stat">⬆ HIGH</span></div>
+                <div><span class="badge badge-resulted">مكتمل</span></div>
+                <button class="btn btn-success" onclick="showToast('success','تم التحقق من النتيجة')">✓ تحقق</button>
+              </div>
+              <div class="result-row">
+                <div class="result-test">
+                  <div style="font-weight:700">C-Reactive Protein (CRP)</div>
+                  <div style="font-size:11px;color:var(--text-muted)">كود: CRP</div>
+                </div>
+                <div class="result-value" style="color:var(--text-muted)">—</div>
+                <div class="result-range" style="color:var(--text-muted)">0 – 5</div>
+                <div class="result-flag">—</div>
+                <div><span class="badge badge-pending">معلق</span></div>
+                <button class="btn btn-primary" onclick="showModal('enter-result')">✏️ إدخال</button>
+              </div>
+              <div class="result-row">
+                <div class="result-test">
+                  <div style="font-weight:700">Blood Urea Nitrogen (BUN)</div>
+                  <div style="font-size:11px;color:var(--text-muted)">كود: UREA</div>
+                </div>
+                <div class="result-value" style="color:var(--text-muted)">—</div>
+                <div class="result-range" style="color:var(--text-muted)">7 – 25</div>
+                <div class="result-flag">—</div>
+                <div><span class="badge badge-pending">معلق</span></div>
+                <button class="btn btn-primary" onclick="showModal('enter-result')">✏️ إدخال</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SIDEBAR ACTIVITY -->
+        <div>
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">آخر النشاطات</div>
+            </div>
+            <div class="card-body">
+              <div class="timeline">
+                <div class="timeline-item">
+                  <div class="timeline-dot" style="background:var(--success)"></div>
+                  <div class="timeline-content">
+                    <div class="timeline-title">تم إدخال نتيجة TSH</div>
+                    <div class="timeline-time">الآن • فاطمة علي</div>
+                  </div>
+                </div>
+                <div class="timeline-item">
+                  <div class="timeline-dot" style="background:var(--primary)"></div>
+                  <div class="timeline-content">
+                    <div class="timeline-title">تم استلام عينة ORD-0041</div>
+                    <div class="timeline-time">منذ 5 دقائق</div>
+                  </div>
+                </div>
+                <div class="timeline-item">
+                  <div class="timeline-dot" style="background:var(--warning)"></div>
+                  <div class="timeline-content">
+                    <div class="timeline-title">⚠️ نتيجة حرجة: CRP = 42</div>
+                    <div class="timeline-time">منذ 12 دقيقة</div>
+                  </div>
+                </div>
+                <div class="timeline-item">
+                  <div class="timeline-dot" style="background:var(--teal)"></div>
+                  <div class="timeline-content">
+                    <div class="timeline-title">تم تحقق النتيجة — LDL</div>
+                    <div class="timeline-time">منذ 18 دقيقة</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== REPORTS ==================== -->
+    <div class="page" id="page-reports">
+      <div class="page-header">
+        <div class="page-header-title">التقارير</div>
+        <div class="page-header-sub">إنشاء وطباعة التقارير المخبرية</div>
+      </div>
+
+      <div class="kpi-row">
+        <div class="kpi-item">
+          <div class="kpi-value" style="color:var(--primary)">312</div>
+          <div class="kpi-label">تقارير هذا الشهر</div>
+        </div>
+        <div class="kpi-item">
+          <div class="kpi-value" style="color:var(--teal)">43</div>
+          <div class="kpi-label">تقارير اليوم</div>
+        </div>
+        <div class="kpi-item">
+          <div class="kpi-value" style="color:var(--success)">97.2%</div>
+          <div class="kpi-label">معدل الدقة</div>
+        </div>
+        <div class="kpi-item">
+          <div class="kpi-value" style="color:var(--warning)">2.4س</div>
+          <div class="kpi-label">متوسط وقت الانتهاء</div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div>
+          <div class="section-title">تقارير جاهزة للطباعة</div>
+          <div class="report-card" onclick="showToast('success','جاري تنزيل تقرير PDF لفاطمة علي...')">
+            <div class="report-icon" style="background:var(--success-light)">📄</div>
+            <div class="report-info">
+              <div class="report-title">تقرير تحليل دم — فاطمة علي</div>
+              <div class="report-desc">3 فحوصات • ORD-20260330-0042</div>
+              <div class="report-meta">اكتمل منذ 28 دقيقة</div>
+            </div>
+            <button class="btn btn-success" onclick="event.stopPropagation();showToast('success','جاري التنزيل...')">⬇ PDF</button>
+          </div>
+          <div class="report-card" onclick="showToast('info','فتح تقرير نورة حسن...')">
+            <div class="report-icon" style="background:var(--primary-light)">📄</div>
+            <div class="report-info">
+              <div class="report-title">تقرير تحليل بول — نورة حسن</div>
+              <div class="report-desc">2 فحوصات • ORD-20260330-0040</div>
+              <div class="report-meta">اكتمل منذ ساعة</div>
+            </div>
+            <button class="btn btn-primary" onclick="event.stopPropagation();showToast('success','جاري التنزيل...')">⬇ PDF</button>
+          </div>
+        </div>
+        <div>
+          <div class="section-title">تقارير إحصائية</div>
+          <div class="report-card" onclick="showToast('info','فتح التقرير الشهري...')">
+            <div class="report-icon" style="background:var(--purple-light)">📊</div>
+            <div class="report-info">
+              <div class="report-title">الأداء الشهري — مارس 2026</div>
+              <div class="report-desc">إجمالي الفحوصات والإيرادات</div>
+              <div class="report-meta">آخر تحديث: اليوم</div>
+            </div>
+            <button class="btn btn-secondary" onclick="event.stopPropagation();showToast('info','جاري التوليد...')">📊 عرض</button>
+          </div>
+          <div class="report-card" onclick="showToast('info','فتح تقرير التدقيق...')">
+            <div class="report-icon" style="background:var(--teal-light)">🔍</div>
+            <div class="report-info">
+              <div class="report-title">تقرير التدقيق — سجل النشاطات</div>
+              <div class="report-desc">جميع العمليات المنفذة</div>
+              <div class="report-meta">آخر 30 يوم</div>
+            </div>
+            <button class="btn btn-secondary" onclick="event.stopPropagation()">📋 عرض</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== NOTIFICATIONS ==================== -->
+    <div class="page" id="page-notifications">
+      <div class="page-header">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div class="page-header-title">الإشعارات</div>
+            <div class="page-header-sub">5 إشعارات غير مقروءة</div>
+          </div>
+          <button class="btn btn-secondary" onclick="showToast('success','تم تعليم جميع الإشعارات كمقروءة')">✓ تعليم الكل كمقروء</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div style="border-bottom:1px solid var(--border);background:var(--danger-light)">
+          <div style="display:flex;align-items:center;gap:14px;padding:14px 20px">
+            <div style="width:40px;height:40px;background:var(--danger);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">🚨</div>
+            <div style="flex:1">
+              <div style="font-size:13px;font-weight:700;color:var(--danger)">نتيجة حرجة — يلزم تدخل فوري</div>
+              <div style="font-size:12px;color:var(--text-muted);margin-top:2px">CRP = 42 mg/L (الطبيعي: 0–5) — المريض: خالد محمود النجار</div>
+              <div style="font-size:11px;color:var(--text-light);margin-top:4px">منذ 12 دقيقة</div>
+            </div>
+            <button class="btn btn-danger">اتصال فوري</button>
+          </div>
+        </div>
+
+        <div style="border-bottom:1px solid var(--border)">
+          <div style="display:flex;align-items:center;gap:14px;padding:14px 20px">
+            <div style="width:40px;height:40px;background:var(--success-light);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">✅</div>
+            <div style="flex:1">
+              <div style="font-size:13px;font-weight:700;color:var(--text)">نتائج جاهزة للاستلام</div>
+              <div style="font-size:12px;color:var(--text-muted);margin-top:2px">تقرير فاطمة علي — ORD-20260330-0042 جاهز للطباعة</div>
+              <div style="font-size:11px;color:var(--text-light);margin-top:4px">منذ 28 دقيقة</div>
+            </div>
+            <button class="btn btn-success" onclick="showToast('success','جاري طباعة التقرير...')">طباعة</button>
+          </div>
+        </div>
+
+        <div style="border-bottom:1px solid var(--border);opacity:.7">
+          <div style="display:flex;align-items:center;gap:14px;padding:14px 20px">
+            <div style="width:40px;height:40px;background:var(--primary-light);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">📋</div>
+            <div style="flex:1">
+              <div style="font-size:13px;font-weight:600;color:var(--text)">طلب جديد وارد</div>
+              <div style="font-size:12px;color:var(--text-muted);margin-top:2px">ORD-20260330-0043 — محمد سالم — 5 فحوصات STAT</div>
+              <div style="font-size:11px;color:var(--text-light);margin-top:4px">منذ 12 دقيقة • مقروء</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="opacity:.7">
+          <div style="display:flex;align-items:center;gap:14px;padding:14px 20px">
+            <div style="width:40px;height:40px;background:var(--warning-light);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">⏰</div>
+            <div style="flex:1">
+              <div style="font-size:13px;font-weight:600;color:var(--text)">تنبيه تأخير</div>
+              <div style="font-size:12px;color:var(--text-muted);margin-top:2px">الطلب ORD-20260330-0041 تجاوز وقت الاستحقاق بـ 15 دقيقة</div>
+              <div style="font-size:11px;color:var(--text-light);margin-top:4px">منذ 15 دقيقة • مقروء</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== SETTINGS ==================== -->
+    <div class="page" id="page-settings">
+      <div class="page-header">
+        <div class="page-header-title">الإعدادات</div>
+        <div class="page-header-sub">تخصيص النظام وإدارة التفضيلات</div>
+      </div>
+
+      <div class="settings-grid">
+        <div class="settings-nav">
+          <div class="settings-nav-item active" onclick="this.parentElement.querySelectorAll('.settings-nav-item').forEach(e=>e.classList.remove('active'));this.classList.add('active')">👤 الملف الشخصي</div>
+          <div class="settings-nav-item" onclick="this.parentElement.querySelectorAll('.settings-nav-item').forEach(e=>e.classList.remove('active'));this.classList.add('active')">🎨 المظهر</div>
+          <div class="settings-nav-item" onclick="this.parentElement.querySelectorAll('.settings-nav-item').forEach(e=>e.classList.remove('active'));this.classList.add('active')">🔔 الإشعارات</div>
+          <div class="settings-nav-item" onclick="this.parentElement.querySelectorAll('.settings-nav-item').forEach(e=>e.classList.remove('active'));this.classList.add('active')">🔒 الأمان</div>
+          <div class="settings-nav-item" onclick="this.parentElement.querySelectorAll('.settings-nav-item').forEach(e=>e.classList.remove('active'));this.classList.add('active')">🖨 الطباعة</div>
+        </div>
+
+        <div class="settings-section">
+          <div class="settings-section-header">
+            <div class="card-title">تفضيلات المظهر والإشعارات</div>
+            <div class="card-subtitle">تخصيص تجربة الاستخدام</div>
+          </div>
+          <div class="settings-section-body">
+            <div class="settings-row">
+              <div>
+                <div class="settings-row-label">الوضع الليلي (Dark Mode)</div>
+                <div class="settings-row-desc">تفعيل الوضع الداكن للحماية من إجهاد العين</div>
+              </div>
+              <div class="toggle" id="dark-toggle" onclick="toggleTheme()"></div>
+            </div>
+            <div class="settings-row">
+              <div>
+                <div class="settings-row-label">إشعارات النتائج الحرجة</div>
+                <div class="settings-row-desc">تنبيه فوري عند اكتشاف نتيجة خارج المدى الحرج</div>
+              </div>
+              <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+            </div>
+            <div class="settings-row">
+              <div>
+                <div class="settings-row-label">الصوت عند الإشعار</div>
+                <div class="settings-row-desc">تشغيل تنبيه صوتي عند وصول طلب STAT</div>
+              </div>
+              <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+            </div>
+            <div class="settings-row">
+              <div>
+                <div class="settings-row-label">تحديث تلقائي للبيانات</div>
+                <div class="settings-row-desc">تحديث القوائم كل 30 ثانية تلقائياً</div>
+              </div>
+              <div class="toggle" onclick="this.classList.toggle('on')"></div>
+            </div>
+            <div class="settings-row">
+              <div>
+                <div class="settings-row-label">لغة الواجهة</div>
+              </div>
+              <select class="form-input" style="width:160px">
+                <option>العربية</option>
+                <option>English</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== PLACEHOLDER PAGES ==================== -->
+    <div class="page" id="page-samples">
+      <div class="page-header-title" style="margin-bottom:20px">🧪 العينات</div>
+      <div class="alert alert-info">هذه الصفحة تُظهر نموذج العينات — الصفحة الكاملة مطبقة في الكود.</div>
+    </div>
+    <div class="page" id="page-services">
+      <div class="page-header-title" style="margin-bottom:20px">⚗️ الخدمات المخبرية</div>
+      <div class="alert alert-info">هذه الصفحة تُظهر الخدمات المخبرية — الصفحة الكاملة مطبقة في الكود.</div>
+    </div>
+
+  </div><!-- end content -->
+</div><!-- end main -->
+</div><!-- end app-shell -->
+
+<!-- ======================== MODALS ======================== -->
+
+<!-- Add Patient Modal -->
+<div class="modal-overlay" id="modal-add-patient" style="display:none" onclick="if(event.target===this)closeModal('add-patient')">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">تسجيل مريض جديد</div>
+      <button class="btn btn-ghost btn-icon" onclick="closeModal('add-patient')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid form-grid-2">
+        <div class="form-group">
+          <label class="form-label">الاسم الأول *</label>
+          <input class="form-input" type="text" placeholder="مثال: محمد">
+        </div>
+        <div class="form-group">
+          <label class="form-label">اسم العائلة *</label>
+          <input class="form-input" type="text" placeholder="مثال: العمري">
+        </div>
+      </div>
+      <div class="form-grid form-grid-2">
+        <div class="form-group">
+          <label class="form-label">رقم الملف الطبي (MRN)</label>
+          <input class="form-input" type="text" placeholder="يُولَّد تلقائياً" style="background:var(--bg);color:var(--text-muted)">
+        </div>
+        <div class="form-group">
+          <label class="form-label">الجنس</label>
+          <select class="form-input">
+            <option value="">اختر...</option>
+            <option>ذكر</option>
+            <option>أنثى</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-grid form-grid-2">
+        <div class="form-group">
+          <label class="form-label">تاريخ الميلاد</label>
+          <input class="form-input" type="date">
+        </div>
+        <div class="form-group">
+          <label class="form-label">رقم الهاتف</label>
+          <input class="form-input" type="tel" placeholder="05XXXXXXXX">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">البريد الإلكتروني</label>
+        <input class="form-input" type="email" placeholder="patient@example.com">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('add-patient')">إلغاء</button>
+      <button class="btn btn-primary" onclick="closeModal('add-patient');showToast('success','تم تسجيل المريض بنجاح ✓')">حفظ المريض</button>
+    </div>
+  </div>
+</div>
+
+<!-- Enter Result Modal -->
+<div class="modal-overlay" id="modal-enter-result" style="display:none" onclick="if(event.target===this)closeModal('enter-result')">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">إدخال نتيجة فحص</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:2px">CRP — المريض: محمد سالم</div>
+      </div>
+      <button class="btn btn-ghost btn-icon" onclick="closeModal('enter-result')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="background:var(--bg);border-radius:var(--radius-sm);padding:12px;margin-bottom:16px;border:1px solid var(--border)">
+        <div style="font-size:11px;color:var(--text-muted)">المدى الطبيعي</div>
+        <div style="font-size:13px;font-weight:700;color:var(--text);margin-top:2px">0 – 5 mg/L</div>
+      </div>
+      <div class="form-grid form-grid-2">
+        <div class="form-group">
+          <label class="form-label">القيمة *</label>
+          <input class="form-input" type="number" placeholder="أدخل القيمة" id="result-val" oninput="checkCritical(this.value)">
+        </div>
+        <div class="form-group">
+          <label class="form-label">الوحدة</label>
+          <input class="form-input" type="text" value="mg/L">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">المدى الطبيعي (تخصيص)</label>
+        <input class="form-input" type="text" placeholder="مثال: 0-5" value="0-5">
+      </div>
+      <div class="form-group">
+        <label class="form-label">التصنيف (Flag)</label>
+        <select class="form-input">
+          <option value="">— اختياري —</option>
+          <option>NORMAL</option>
+          <option>LOW</option>
+          <option>HIGH</option>
+          <option>CRITICAL_LOW</option>
+          <option selected>CRITICAL_HIGH</option>
+          <option>ABNORMAL</option>
+        </select>
+      </div>
+      <div id="critical-warn" style="display:none">
+        <div class="alert alert-warning" style="margin-bottom:12px">
+          ⚠️ <b>القيمة خارج المدى الطبيعي</b> — سيتم إرسال إشعار فوري للطاقم الطبي
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">ملاحظات</label>
+        <textarea class="form-input" rows="2" placeholder="ملاحظات اختيارية..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('enter-result')">إلغاء</button>
+      <button class="btn btn-primary" onclick="closeModal('enter-result');showToast('success','تم حفظ النتيجة وإرسال الإشعار ✓')">حفظ النتيجة</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Order Modal -->
+<div class="modal-overlay" id="modal-add-order" style="display:none" onclick="if(event.target===this)closeModal('add-order')">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">طلب فحص جديد</div>
+      <button class="btn btn-ghost btn-icon" onclick="closeModal('add-order')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">البحث عن مريض *</label>
+        <input class="form-input" type="text" placeholder="ابحث بالاسم أو رقم الملف..." id="patient-search">
+      </div>
+      <div class="form-grid form-grid-2">
+        <div class="form-group">
+          <label class="form-label">الأولوية</label>
+          <select class="form-input">
+            <option>ROUTINE</option>
+            <option>URGENT</option>
+            <option>STAT</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">اسم الطبيب</label>
+          <input class="form-input" type="text" placeholder="د. اسم الطبيب">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">الخدمات / الفحوصات</label>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;padding:8px;border:1.5px solid var(--border);border-radius:var(--radius-sm);min-height:44px;background:var(--bg)">
+          <span class="badge badge-progress" style="cursor:pointer">× TSH</span>
+          <span class="badge badge-progress" style="cursor:pointer">× CRP</span>
+          <input type="text" placeholder="إضافة فحص..." style="border:none;background:transparent;outline:none;font-size:13px;color:var(--text);min-width:120px">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">ملاحظات سريرية</label>
+        <textarea class="form-input" rows="2" placeholder="أعراض، مرض مزمن..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('add-order')">إلغاء</button>
+      <button class="btn btn-primary" onclick="closeModal('add-order');showToast('success','تم إنشاء الطلب ORD-20260330-0044 ✓')">إنشاء الطلب</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST CONTAINER -->
+<div class="toast-container" id="toast-container"></div>
+
+<!-- ======================== JAVASCRIPT ======================== -->
+<script>
+const pageTitles = {
+  dashboard: 'لوحة التحكم',
+  patients: 'المرضى',
+  orders: 'الطلبات',
+  samples: 'العينات',
+  results: 'النتائج',
+  services: 'الخدمات المخبرية',
+  reports: 'التقارير',
+  notifications: 'الإشعارات',
+  settings: 'الإعدادات',
+};
+
+function showPage(id, navEl) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  const page = document.getElementById('page-' + id);
+  if (page) page.classList.add('active');
+  document.getElementById('page-title').textContent = pageTitles[id] || id;
+  if (navEl) {
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    navEl.classList.add('active');
+  }
+}
+
+function showModal(id) {
+  const m = document.getElementById('modal-' + id);
+  if (m) m.style.display = 'flex';
+}
+
+function closeModal(id) {
+  const m = document.getElementById('modal-' + id);
+  if (m) m.style.display = 'none';
+}
+
+let toastId = 0;
+function showToast(type, msg) {
+  const icons = { success: '✅', error: '❌', info: 'ℹ️', warning: '⚠️' };
+  const id = 'toast-' + (++toastId);
+  const toast = document.createElement('div');
+  toast.className = `toast toast-${type}`;
+  toast.id = id;
+  toast.innerHTML = `<span class="toast-icon">${icons[type]||'ℹ️'}</span><span class="toast-text">${msg}</span><span style="cursor:pointer;color:var(--text-light);font-size:14px" onclick="removeToast('${id}')">✕</span>`;
+  document.getElementById('toast-container').prepend(toast);
+  setTimeout(() => removeToast(id), 4000);
+}
+
+function removeToast(id) {
+  const el = document.getElementById(id);
+  if (el) { el.style.opacity = '0'; el.style.transform = 'translateX(-20px)'; el.style.transition = '.3s'; setTimeout(() => el.remove(), 300); }
+}
+
+let isDark = false;
+function toggleTheme() {
+  isDark = !isDark;
+  document.documentElement.setAttribute('data-theme', isDark ? 'dark' : '');
+  const toggle = document.getElementById('dark-toggle');
+  if (toggle) { toggle.classList.toggle('on', isDark); }
+  showToast('info', isDark ? 'تم تفعيل الوضع الليلي 🌙' : 'تم تفعيل الوضع النهاري ☀️');
+}
+
+function setTab(el) {
+  el.closest('.tab-list').querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function checkCritical(val) {
+  const warn = document.getElementById('critical-warn');
+  if (warn) warn.style.display = val > 5 ? 'block' : 'none';
+}
+
+// Welcome toast
+setTimeout(() => showToast('info', 'مرحباً! هذا عرض تصميمي تفاعلي لنظام LIS'), 800);
+setTimeout(() => showToast('warning', '3 نتائج حرجة تستدعي اهتماماً فورياً'), 2200);
+</script>
+</body>
+</html>

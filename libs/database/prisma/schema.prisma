@@ -1,0 +1,679 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================
+// PLATFORM LAYER - SuperAdmin / Support (not tied to any lab)
+// ============================================================
+
+model PlatformUser {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  firstName String   @map("first_name")
+  lastName  String   @map("last_name")
+  role      PlatformRole @default(SUPPORT)
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("platform_users")
+}
+
+enum PlatformRole {
+  SUPER_ADMIN
+  SUPPORT
+}
+
+// ============================================================
+// LABORATORY (Tenant)
+// ============================================================
+
+model Laboratory {
+  id             String   @id @default(uuid())
+  name           String
+  slug           String   @unique
+  address        String?
+  phone          String?
+  email          String?
+  logo           String?
+  licenseNumber  String?  @map("license_number")
+  subscriptionPlan SubscriptionPlan @default(TRIAL) @map("subscription_plan")
+  subscriptionEnd  DateTime? @map("subscription_end")
+  isActive       Boolean  @default(true) @map("is_active")
+  settings       Json     @default("{}")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  users           User[]
+  roles           Role[]
+  patients        Patient[]
+  orders          Order[]
+  samples         Sample[]
+  labServices     LabService[]
+  panels          Panel[]
+  analyzers       Analyzer[]
+  auditLogs       AuditLog[]
+  reportTemplates ReportTemplate[]
+  invoices        Invoice[]
+  whatsAppSendLogs WhatsAppSendLog[]
+  deviceMappings  DeviceTestMapping[]
+  ingestionLogs   IngestionLog[]
+
+  @@map("laboratories")
+}
+
+enum SubscriptionPlan {
+  TRIAL
+  BASIC
+  PROFESSIONAL
+  ENTERPRISE
+}
+
+// ============================================================
+// RBAC - Roles, Permissions, RolePermissions
+// ============================================================
+
+model Role {
+  id           String   @id @default(uuid())
+  name         String
+  description  String?
+  isSystem     Boolean  @default(false) @map("is_system")
+  laboratoryId String?  @map("laboratory_id")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  laboratory      Laboratory?      @relation(fields: [laboratoryId], references: [id], onDelete: Cascade)
+  rolePermissions RolePermission[]
+  users           User[]
+
+  @@unique([name, laboratoryId])
+  @@map("roles")
+}
+
+model Permission {
+  id          String   @id @default(uuid())
+  action      String
+  subject     String
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  rolePermissions RolePermission[]
+
+  @@unique([action, subject])
+  @@map("permissions")
+}
+
+model RolePermission {
+  id           String @id @default(uuid())
+  roleId       String @map("role_id")
+  permissionId String @map("permission_id")
+
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+// ============================================================
+// LABORATORY USERS
+// ============================================================
+
+model User {
+  id           String   @id @default(uuid())
+  email        String
+  password     String
+  firstName    String   @map("first_name")
+  lastName     String   @map("last_name")
+  phone        String?
+  roleId       String   @map("role_id")
+  laboratoryId String   @map("laboratory_id")
+  isActive     Boolean  @default(true) @map("is_active")
+  lastLoginAt  DateTime? @map("last_login_at")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  role       Role       @relation(fields: [roleId], references: [id])
+  laboratory Laboratory @relation(fields: [laboratoryId], references: [id], onDelete: Cascade)
+  orders     Order[]    @relation("OrderCreatedBy")
+  physicianOrders Order[] @relation("OrderPhysician")
+  validations TestResult[] @relation("ValidatedBy")
+  auditLogs  AuditLog[]
+  invoicesCreated Invoice[]  @relation("InvoiceCreatedBy")
+  paymentsCreated Payment[]  @relation("PaymentCreatedBy")
+  whatsAppSendLogs WhatsAppSendLog[]
+
+  @@unique([email, laboratoryId])
+  @@index([laboratoryId])
+  @@map("users")
+}
+
+// ============================================================
+// PATIENTS
+// ============================================================
+
+model Patient {
+  id           String    @id @default(uuid())
+  mrn          String    @map("mrn")
+  firstName    String    @map("first_name")
+  lastName     String    @map("last_name")
+  dateOfBirth  DateTime? @map("date_of_birth")
+  gender       Gender?
+  phone        String?
+  email        String?
+  address      String?
+  nationalId   String?   @map("national_id")
+  laboratoryId String    @map("laboratory_id")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  laboratory Laboratory @relation(fields: [laboratoryId], references: [id], onDelete: Cascade)
+  orders     Order[]
+  invoices   Invoice[]
+  whatsAppSendLogs WhatsAppSendLog[]
+
+  @@unique([mrn, laboratoryId])
+  @@index([laboratoryId])
+  @@index([lastName, laboratoryId])
+  @@map("patients")
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+// ============================================================
+// ORDERS
+// ============================================================
+
+model Order {
+  id            String      @id @default(uuid())
+  orderNumber   String      @map("order_number")
+  patientId     String      @map("patient_id")
+  laboratoryId  String      @map("laboratory_id")
+  createdById   String      @map("created_by_id")
+  priority      OrderPriority @default(ROUTINE)
+  status        OrderStatus @default(PENDING)
+  clinicalNotes String?     @map("clinical_notes")
+  physicianName String?     @map("physician_name")
+  physicianUserId String?   @map("physician_user_id")
+  createdAt     DateTime    @default(now()) @map("created_at")
+  updatedAt     DateTime    @updatedAt @map("updated_at")
+
+  patient    Patient    @relation(fields: [patientId], references: [id])
+  laboratory Laboratory @relation(fields: [laboratoryId], references: [id], onDelete: Cascade)
+  createdBy  User       @relation("OrderCreatedBy", fields: [createdById], references: [id])
+  physicianUser User?     @relation("OrderPhysician", fields: [physicianUserId], references: [id], onDelete: SetNull)
+  samples    Sample[]
+  invoices   Invoice[]
+  whatsAppSendLogs WhatsAppSendLog[]
+
+  @@unique([orderNumber, laboratoryId])
+  @@index([laboratoryId])
+  @@index([status, laboratoryId])
+  @@index([physicianUserId, laboratoryId])
+  @@map("orders")
+}
+
+enum OrderPriority {
+  STAT
+  URGENT
+  ROUTINE
+}
+
+enum OrderStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+// ============================================================
+// SAMPLES
+// ============================================================
+
+model Sample {
+  id           String       @id @default(uuid())
+  barcode      String
+  orderId      String       @map("order_id")
+  laboratoryId String       @map("laboratory_id")
+  sampleType   SampleType   @default(BLOOD) @map("sample_type")
+  status       SampleStatus @default(REGISTERED)
+  collectedAt  DateTime?    @map("collected_at")
+  receivedAt   DateTime?    @map("received_at")
+  notes        String?
+  createdAt    DateTime     @default(now()) @map("created_at")
+  updatedAt    DateTime     @updatedAt @map("updated_at")
+
+  order       Order       @relation(fields: [orderId], references: [id])
+  laboratory  Laboratory  @relation(fields: [laboratoryId], references: [id], onDelete: Cascade)
+  sampleTests SampleTest[]
+
+  @@unique([barcode, laboratoryId])
+  @@index([laboratoryId])
+  @@index([status, laboratoryId])
+  @@map("samples")
+}
+
+enum SampleType {
+  BLOOD
+  URINE
+  SERUM
+  PLASMA
+  CSF
+  STOOL
+  SWAB
+  TISSUE
+  OTHER
+}
+
+enum SampleStatus {
+  REGISTERED
+  COLLECTED
+  RECEIVED
+  IN_PROGRESS
+  COMPLETED
+  REJECTED
+}
+
+// ============================================================
+// LAB SERVICES (Tests offered by the lab)
+// ============================================================
+
+model LabService {
+  id           String  @id @default(uuid())
+  code         String
+  name         String
+  description  String?
+  department   String?
+  price        Float   @default(0)
+  unit         String?
+  normalRange  String? @map("normal_range")
+  laboratoryId String  @map("laboratory_id")
+  isActive     Boolean @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  laboratory     Laboratory          @relation(fields: [laboratoryId], references: [id], onDelete: Cascade)
+  sampleTests    SampleTest[]
+  panelItems     PanelItem[]
+  analyzerTests  AnalyzerTest[]
+  invoiceItems   InvoiceItem[]
+  deviceMappings DeviceTestMapping[]
+
+  @@unique([code, laboratoryId])
+  @@index([laboratoryId])
+  @@map("lab_services")
+}
+
+// ============================================================
+// PANELS (Groups of tests)
+// ============================================================
+
+model Panel {
+  id           String  @id @default(uuid())
+  code         String
+  name         String
+  description  String?
+  price        Float   @default(0)
+  laboratoryId String  @map("laboratory_id")
+  isActive     Boolean @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  laboratory   Laboratory    @relation(fields: [laboratoryId], references: [id], onDelete: Cascade)
+  panelItems   PanelItem[]
+  sampleTests  SampleTest[]
+  invoiceItems InvoiceItem[]
+
+  @@unique([code, laboratoryId])
+  @@index([laboratoryId])
+  @@map("panels")
+}
+
+model PanelItem {
+  id          String @id @default(uuid())
+  panelId     String @map("panel_id")
+  labServiceId String @map("lab_service_id")
+
+  panel      Panel      @relation(fields: [panelId], references: [id], onDelete: Cascade)
+  labService LabService @relation(fields: [labServiceId], references: [id], onDelete: Cascade)
+
+  @@unique([panelId, labServiceId])
+  @@map("panel_items")
+}
+
+// ============================================================
+// ANALYZERS (Medical devices)
+// ============================================================
+
+model Analyzer {
+  id           String  @id @default(uuid())
+  name         String
+  manufacturer String?
+  model        String?
+  serialNumber String? @map("serial_number")
+  laboratoryId String  @map("laboratory_id")
+  isActive     Boolean @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  laboratory    Laboratory     @relation(fields: [laboratoryId], references: [id], onDelete: Cascade)
+  analyzerTests AnalyzerTest[]
+
+  @@index([laboratoryId])
+  @@map("analyzers")
+}
+
+model AnalyzerTest {
+  id          String @id @default(uuid())
+  analyzerId  String @map("analyzer_id")
+  labServiceId String @map("lab_service_id")
+
+  analyzer   Analyzer   @relation(fields: [analyzerId], references: [id], onDelete: Cascade)
+  labService LabService @relation(fields: [labServiceId], references: [id], onDelete: Cascade)
+
+  @@unique([analyzerId, labServiceId])
+  @@map("analyzer_tests")
+}
+
+// ============================================================
+// SAMPLE TESTS & RESULTS
+// ============================================================
+
+model SampleTest {
+  id           String          @id @default(uuid())
+  sampleId     String          @map("sample_id")
+  labServiceId String          @map("lab_service_id")
+  // عند الربط بباقة: الفوترة بسعر الباقة وعرض اسمها
+  panelId      String?         @map("panel_id")
+  status       SampleTestStatus @default(PENDING)
+  analyzerId   String?         @map("analyzer_id")
+  createdAt    DateTime        @default(now()) @map("created_at")
+  updatedAt    DateTime        @updatedAt @map("updated_at")
+
+  sample     Sample     @relation(fields: [sampleId], references: [id], onDelete: Cascade)
+  labService LabService @relation(fields: [labServiceId], references: [id])
+  panel      Panel?     @relation(fields: [panelId], references: [id], onDelete: SetNull)
+  result     TestResult?
+
+  @@index([sampleId])
+  @@index([status])
+  @@index([panelId])
+  @@map("sample_tests")
+}
+
+enum SampleTestStatus {
+  PENDING
+  IN_PROGRESS
+  RESULTED
+  VALIDATED
+  REJECTED
+}
+
+model TestResult {
+  id            String          @id @default(uuid())
+  sampleTestId  String          @unique @map("sample_test_id")
+  value         String
+  unit          String?
+  normalRange   String?         @map("normal_range")
+  flag          ResultFlag?
+  notes         String?
+  validatedById String?         @map("validated_by_id")
+  validatedAt   DateTime?       @map("validated_at")
+  createdAt     DateTime        @default(now()) @map("created_at")
+  updatedAt     DateTime        @updatedAt @map("updated_at")
+
+  sampleTest  SampleTest @relation(fields: [sampleTestId], references: [id], onDelete: Cascade)
+  validatedBy User?      @relation("ValidatedBy", fields: [validatedById], references: [id])
+
+  @@map("test_results")
+}
+
+enum ResultFlag {
+  NORMAL
+  LOW
+  HIGH
+  CRITICAL_LOW
+  CRITICAL_HIGH
+  ABNORMAL
+}
+
+// ============================================================
+// INVOICES & BILLING
+// ============================================================
+
+model Invoice {
+  id             String        @id @default(uuid())
+  invoiceNumber  String        @map("invoice_number")
+  orderId        String?       @map("order_id")
+  patientId      String        @map("patient_id")
+  laboratoryId   String        @map("laboratory_id")
+  createdById    String        @map("created_by_id")
+  subtotal       Float         @default(0)
+  discountType   DiscountType  @default(NONE) @map("discount_type")
+  discountValue  Float         @default(0) @map("discount_value")
+  discountAmount Float         @default(0) @map("discount_amount")
+  taxAmount      Float         @default(0) @map("tax_amount")
+  total          Float         @default(0)
+  paidAmount     Float         @default(0) @map("paid_amount")
+  remaining      Float         @default(0)
+  status         InvoiceStatus @default(PENDING)
+  notes          String?
+  createdAt      DateTime      @default(now()) @map("created_at")
+  updatedAt      DateTime      @updatedAt @map("updated_at")
+
+  order      Order?        @relation(fields: [orderId], references: [id])
+  patient    Patient       @relation(fields: [patientId], references: [id])
+  laboratory Laboratory    @relation(fields: [laboratoryId], references: [id], onDelete: Cascade)
+  createdBy  User          @relation("InvoiceCreatedBy", fields: [createdById], references: [id])
+  items      InvoiceItem[]
+  payments   Payment[]
+
+  @@unique([invoiceNumber, laboratoryId])
+  @@index([laboratoryId])
+  @@index([status, laboratoryId])
+  @@index([orderId])
+  @@map("invoices")
+}
+
+model InvoiceItem {
+  id           String  @id @default(uuid())
+  invoiceId    String  @map("invoice_id")
+  description  String
+  quantity     Int     @default(1)
+  unitPrice    Float   @map("unit_price")
+  total        Float   @default(0)
+  labServiceId String? @map("lab_service_id")
+  // بند باقة: سعر الباقة وليس مجموع التحاليل
+  panelId      String? @map("panel_id")
+
+  invoice    Invoice     @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  labService LabService? @relation(fields: [labServiceId], references: [id])
+  panel      Panel?      @relation(fields: [panelId], references: [id], onDelete: SetNull)
+
+  @@index([invoiceId])
+  @@index([panelId])
+  @@map("invoice_items")
+}
+
+model Payment {
+  id          String        @id @default(uuid())
+  invoiceId   String        @map("invoice_id")
+  amount      Float
+  method      PaymentMethod @default(CASH)
+  reference   String?
+  paidAt      DateTime      @default(now()) @map("paid_at")
+  createdById String        @map("created_by_id")
+
+  invoice   Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  createdBy User    @relation("PaymentCreatedBy", fields: [createdById], references: [id])
+
+  @@index([invoiceId])
+  @@map("payments")
+}
+
+enum DiscountType {
+  NONE
+  PERCENTAGE
+  FIXED
+}
+
+enum InvoiceStatus {
+  PENDING
+  PAID
+  PARTIAL
+  CANCELLED
+}
+
+enum PaymentMethod {
+  CASH
+  CARD
+  TRANSFER
+  INSURANCE
+  OTHER
+}
+
+// ============================================================
+// REPORT TEMPLATES
+// ============================================================
+
+model ReportTemplate {
+  id           String  @id @default(uuid())
+  name         String
+  htmlTemplate String  @map("html_template") @db.Text
+  isDefault    Boolean @default(false) @map("is_default")
+  laboratoryId String  @map("laboratory_id")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  laboratory Laboratory @relation(fields: [laboratoryId], references: [id], onDelete: Cascade)
+
+  @@index([laboratoryId])
+  @@map("report_templates")
+}
+
+// ============================================================
+// AUDIT LOGS (Append-only)
+// ============================================================
+
+model AuditLog {
+  id           String   @id @default(uuid())
+  action       AuditAction
+  entityType   String   @map("entity_type")
+  entityId     String   @map("entity_id")
+  oldValues    Json?    @map("old_values")
+  newValues    Json?    @map("new_values")
+  userId       String?  @map("user_id")
+  laboratoryId String?  @map("laboratory_id")
+  ipAddress    String?  @map("ip_address")
+  userAgent    String?  @map("user_agent")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  user       User?       @relation(fields: [userId], references: [id])
+  laboratory Laboratory? @relation(fields: [laboratoryId], references: [id])
+
+  @@index([entityType, entityId])
+  @@index([laboratoryId])
+  @@index([userId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  VALIDATE
+  LOGIN
+  LOGOUT
+}
+
+// ============================================================
+// DEVICE TEST MAPPINGS (Device analyte code → LIS Lab Service)
+// ============================================================
+
+model DeviceTestMapping {
+  id           String   @id @default(uuid())
+  laboratoryId String   @map("laboratory_id")
+  deviceId     String   @map("device_id")
+  deviceCode   String   @map("device_code")
+  labServiceId String   @map("lab_service_id")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  laboratory Laboratory @relation(fields: [laboratoryId], references: [id], onDelete: Cascade)
+  labService LabService @relation(fields: [labServiceId], references: [id], onDelete: Cascade)
+
+  @@unique([laboratoryId, deviceId, deviceCode])
+  @@index([laboratoryId, deviceId])
+  @@map("device_test_mappings")
+}
+
+// ============================================================
+// INGESTION LOGS (Audit trail for device result submissions)
+// ============================================================
+
+model IngestionLog {
+  id           String          @id @default(uuid())
+  laboratoryId String?         @map("laboratory_id")
+  deviceId     String          @map("device_id")
+  barcode      String
+  deviceCode   String          @map("device_code")
+  value        String?
+  status       IngestionStatus
+  sampleTestId String?         @map("sample_test_id")
+  reason       String?
+  createdAt    DateTime        @default(now()) @map("created_at")
+
+  laboratory Laboratory? @relation(fields: [laboratoryId], references: [id], onDelete: SetNull)
+
+  @@index([laboratoryId, createdAt])
+  @@index([barcode])
+  @@map("ingestion_logs")
+}
+
+enum IngestionStatus {
+  SUCCESS
+  FAILED
+  DUPLICATE
+  SKIPPED
+}
+
+// ============================================================
+// WHATSAPP OUTBOUND (staff-initiated; session via whatsapp-web.js)
+// ============================================================
+
+model WhatsAppSendLog {
+  id              String               @id @default(uuid())
+  laboratoryId    String               @map("laboratory_id")
+  patientId       String?              @map("patient_id")
+  orderId         String?              @map("order_id")
+  userId          String               @map("user_id")
+  phone           String
+  messagePreview  String?              @map("message_preview") @db.VarChar(500)
+  status          WhatsAppSendStatus
+  errorMessage    String?              @map("error_message") @db.Text
+  createdAt       DateTime             @default(now()) @map("created_at")
+
+  laboratory Laboratory @relation(fields: [laboratoryId], references: [id], onDelete: Cascade)
+  patient    Patient?   @relation(fields: [patientId], references: [id], onDelete: SetNull)
+  order      Order?     @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([laboratoryId, createdAt])
+  @@map("whatsapp_send_logs")
+}
+
+enum WhatsAppSendStatus {
+  SUCCESS
+  FAILED
+}

@@ -1,0 +1,268 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Medical Professional Color System */
+    --background: 210 40% 98%;       /* #F8FAFC */
+    --foreground: 222 47% 11%;       /* #0F172A */
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+    --primary: 221 83% 53%;          /* #2563EB */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222 47% 11%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%; /* #64748B */
+    --accent: 174 72% 40%;           /* #14B8A6 Teal */
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 214 32% 91%;           /* #E2E8F0 */
+    --input: 214 32% 91%;
+    --ring: 221 83% 53%;
+    --radius: 0.625rem;              /* 10px */
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+
+    /* Extended palette */
+    --success: 142 71% 45%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+    --teal: 174 72% 40%;
+    --teal-foreground: 0 0% 100%;
+    --sidebar: 0 0% 100%;
+    --sidebar-foreground: 222 47% 11%;
+    --topbar: 0 0% 100%;
+  }
+
+  .dark {
+    --background: 222 47% 7%;        /* #0F172A */
+    --foreground: 210 40% 96%;       /* #F1F5F9 */
+    --card: 222 47% 11%;             /* #1E293B */
+    --card-foreground: 210 40% 96%;
+    --primary: 217 91% 60%;          /* #3B82F6 */
+    --primary-foreground: 222 47% 11%;
+    --secondary: 217 33% 17%;
+    --secondary-foreground: 210 40% 96%;
+    --muted: 217 33% 17%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 174 60% 45%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217 33% 17%;
+    --input: 217 33% 17%;
+    --ring: 224 76% 48%;
+    --popover: 222 47% 11%;
+    --popover-foreground: 210 40% 96%;
+    --success: 142 71% 40%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 92% 45%;
+    --warning-foreground: 0 0% 100%;
+    --teal: 174 60% 45%;
+    --teal-foreground: 0 0% 100%;
+    --sidebar: 222 47% 11%;
+    --sidebar-foreground: 210 40% 96%;
+    --topbar: 222 47% 11%;
+  }
+}
+
+@layer base {
+  * {
+    border-color: hsl(var(--border));
+  }
+
+  body {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+    font-family: var(--font-cairo), 'Cairo', 'Segoe UI', system-ui, sans-serif;
+    font-size: 14px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  :lang(ar) {
+    font-feature-settings: normal;
+    line-height: 1.75;
+  }
+
+  input[type='number']:lang(ar) {
+    direction: ltr;
+  }
+
+  /* Smooth scrollbar */
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--border));
+    border-radius: 10px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-foreground) / 0.4);
+  }
+}
+
+/* ============================================================
+   CUSTOM UTILITY CLASSES
+   ============================================================ */
+@layer utilities {
+  /* Page header */
+  .page-heading {
+    @apply text-2xl font-extrabold tracking-tight text-foreground;
+  }
+  .page-subheading {
+    @apply text-sm text-muted-foreground mt-0.5;
+  }
+
+  /* Section label */
+  .section-label {
+    @apply text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70 px-2 mb-1;
+  }
+
+  /* Stat badge colors */
+  .badge-success {
+    @apply bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400;
+  }
+  .badge-warning {
+    @apply bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-400;
+  }
+  .badge-danger {
+    @apply bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-400;
+  }
+  .badge-info {
+    @apply bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-400;
+  }
+  .badge-teal {
+    @apply bg-teal-50 text-teal-700 dark:bg-teal-950 dark:text-teal-400;
+  }
+  .badge-muted {
+    @apply bg-muted text-muted-foreground;
+  }
+
+  /* Card hover effect */
+  .card-hover {
+    @apply transition-all duration-200 hover:shadow-md hover:-translate-y-0.5;
+  }
+
+  /* Table row hover */
+  .table-row-hover {
+    @apply transition-colors hover:bg-primary/5;
+  }
+
+  /* Stat icon containers */
+  .stat-icon-blue  { @apply bg-blue-50  text-blue-600  dark:bg-blue-950  dark:text-blue-400; }
+  .stat-icon-amber { @apply bg-amber-50 text-amber-600 dark:bg-amber-950 dark:text-amber-400; }
+  .stat-icon-teal  { @apply bg-teal-50  text-teal-600  dark:bg-teal-950  dark:text-teal-400; }
+  .stat-icon-green { @apply bg-emerald-50 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-400; }
+  .stat-icon-red   { @apply bg-red-50   text-red-600   dark:bg-red-950   dark:text-red-400; }
+
+  /* Sidebar nav item */
+  .nav-link {
+    @apply flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-all duration-150;
+  }
+  .nav-link:hover {
+    @apply text-primary;
+    background-color: hsl(var(--primary) / 0.08);
+  }
+  .nav-link.active {
+    @apply text-primary font-semibold;
+    background-color: hsl(var(--primary) / 0.1);
+  }
+
+  /* Priority badges */
+  .priority-stat    { @apply bg-red-50   text-red-700   border border-red-200   dark:bg-red-950   dark:text-red-400; }
+  .priority-urgent  { @apply bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950 dark:text-amber-400; }
+  .priority-routine { @apply bg-slate-50 text-slate-600 border border-slate-200 dark:bg-slate-900 dark:text-slate-400; }
+
+  /* Status badges */
+  .status-pending   { @apply bg-amber-50  text-amber-700  dark:bg-amber-950  dark:text-amber-400; }
+  .status-progress  { @apply bg-blue-50   text-blue-700   dark:bg-blue-950   dark:text-blue-400; }
+  .status-resulted  { @apply bg-teal-50   text-teal-700   dark:bg-teal-950   dark:text-teal-400; }
+  .status-completed { @apply bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400; }
+  .status-cancelled { @apply bg-red-50    text-red-700    dark:bg-red-950    dark:text-red-400; }
+  .status-validated { @apply bg-purple-50 text-purple-700 dark:bg-purple-950 dark:text-purple-400; }
+  .status-received  { @apply bg-sky-50    text-sky-700    dark:bg-sky-950    dark:text-sky-400; }
+
+  /* Flag badge */
+  .flag-normal   { @apply bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400; }
+  .flag-high     { @apply bg-amber-50  text-amber-700  dark:bg-amber-950  dark:text-amber-400; }
+  .flag-low      { @apply bg-amber-50  text-amber-700  dark:bg-amber-950  dark:text-amber-400; }
+  .flag-critical { @apply bg-red-50    text-red-700    dark:bg-red-950    dark:text-red-400; }
+
+  /*
+   * LTR content inside RTL tables (emails, codes, barcodes).
+   * Keeps reading order correct without breaking overall RTL layout.
+   */
+  .ltr-isolate {
+    direction: ltr;
+    unicode-bidi: isolate;
+    text-align: start;
+  }
+
+  /* Action column: align controls to inline-start (يمين الواجهة في RTL) */
+  .table-actions {
+    @apply flex items-center justify-start gap-2;
+  }
+
+  /* Card accent top border */
+  .card-accent-top {
+    @apply border-t-2 border-t-primary;
+  }
+
+  /* Form section divider */
+  .form-section {
+    @apply rounded-xl border border-border bg-muted/20 p-4 space-y-3;
+  }
+
+  /* Status dot indicator */
+  .status-dot {
+    @apply inline-block h-2 w-2 rounded-full;
+  }
+  .status-dot-green  { @apply bg-emerald-500; }
+  .status-dot-amber  { @apply bg-amber-500; }
+  .status-dot-blue   { @apply bg-blue-500; }
+  .status-dot-red    { @apply bg-red-500; }
+  .status-dot-gray   { @apply bg-muted-foreground/40; }
+
+  /* Pill tag */
+  .pill-tag {
+    @apply inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-all;
+  }
+  .pill-tag-active {
+    @apply border-primary/30 bg-primary text-primary-foreground shadow-sm;
+  }
+  .pill-tag-inactive {
+    @apply border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground;
+  }
+
+  /* Monospaced code chip */
+  .code-chip {
+    @apply inline-flex items-center rounded-md bg-muted/60 px-2 py-1 font-mono text-xs font-medium ltr-isolate;
+  }
+
+  /* Animate fade-in */
+  .animate-fade-in {
+    animation: fadeIn 0.2s ease-out;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Page container (add bottom padding) */
+  .page-container {
+    @apply space-y-6 pb-8;
+  }
+
+  /* Highlighted row */
+  .row-highlight {
+    @apply bg-amber-50/50 dark:bg-amber-950/10;
+  }
+
+  /* Info tip inline */
+  .info-tip {
+    @apply flex items-center gap-1.5 text-xs text-muted-foreground;
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "compileOnSave": false,
+  "compilerOptions": {
+    "rootDir": ".",
+    "sourceMap": true,
+    "declaration": false,
+    "moduleResolution": "node",
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "importHelpers": true,
+    "target": "ES2021",
+    "module": "commonjs",
+    "lib": ["ES2021", "dom"],
+    "skipLibCheck": true,
+    "skipDefaultLibCheck": true,
+    "baseUrl": ".",
+    "strict": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "paths": {
+      "@lis/shared": ["libs/shared/src/index.ts"],
+      "@lis/database": ["libs/database/src/index.ts"]
+    }
+  },
+  "exclude": ["node_modules", "tmp"]
+}
