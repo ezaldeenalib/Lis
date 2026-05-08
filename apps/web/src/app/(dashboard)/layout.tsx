@@ -23,6 +23,7 @@ import {
   ChevronRight,
   Receipt,
   Cable,
+  MessageSquare,
 } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth.store';
 import { useListViewStore } from '@/stores/list-view.store';
@@ -69,6 +70,7 @@ const ALL_NAV_SECTIONS: NavSection[] = [
       { href: '/panels', label: 'الباقات', icon: Layers, permission: 'manage:panel' },
       { href: '/analyzers', label: 'أجهزة التحليل', icon: Cpu, permission: 'manage:analyzer' },
       { href: '/device-mappings', label: 'ربط تحاليل الأجهزة', icon: Cable, permission: 'manage:analyzer' },
+      { href: '/whatsapp', label: 'واتساب', icon: MessageSquare, permission: 'send:whatsapp' },
       { href: '/users', label: 'المستخدمون', icon: UserCog, permission: 'manage:user' },
       { href: '/reports', label: 'التقارير', icon: BarChart3, permission: 'manage:report' },
       { href: '/audit-logs', label: 'سجل النشاطات', icon: FileText, permission: 'read:auditLog' },

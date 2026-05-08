@@ -126,7 +126,7 @@ export default function DeviceMappingsPage() {
   }, []);
 
   const handleAddNewDevice = () => {
-    const id = deviceIdInput.trim().toUpperCase();
+    const id = deviceIdInput.trim();
     if (!id) return;
     setDeviceId(id);
     setRows([]);
@@ -134,9 +134,9 @@ export default function DeviceMappingsPage() {
   };
 
   const handleAddRow = () => {
-    const code = newCode.trim().toUpperCase();
+    const code = newCode.trim();
     if (!code) return;
-    if (rows.some((r) => r.deviceCode === code)) {
+    if (rows.some((r) => r.deviceCode.trim().toLowerCase() === code.toLowerCase())) {
       toast({ title: 'الكود موجود مسبقاً', description: code, variant: 'destructive' });
       return;
     }
@@ -405,7 +405,7 @@ export default function DeviceMappingsPage() {
                     <Input
                       placeholder="كود جديد (مثال: WBC)"
                       value={newCode}
-                      onChange={(e) => setNewCode(e.target.value.toUpperCase())}
+                      onChange={(e) => setNewCode(e.target.value)}
                       onKeyDown={(e) => e.key === 'Enter' && handleAddRow()}
                       className="font-mono max-w-[180px] h-9 text-sm"
                     />

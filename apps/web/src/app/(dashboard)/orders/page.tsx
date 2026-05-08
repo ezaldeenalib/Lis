@@ -16,6 +16,7 @@ import {
   UserCheck,
   ClipboardList,
   User,
+  FileText,
 } from 'lucide-react';
 import { EmptyState } from '@/components/ui/empty-state';
 import { api } from '@/lib/api';
@@ -42,6 +43,12 @@ import {
   DialogFooter,
   DialogDescription,
 } from '@/components/ui/dialog';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import {
   Select,
   SelectContent,
@@ -78,6 +85,7 @@ interface Order {
     firstName: string;
     lastName: string;
     mrn: string;
+    phone?: string | null;
   };
 }
 
@@ -271,6 +279,20 @@ function patientGroupAccent(patientId: string): string {
   return PATIENT_GROUP_ACCENTS[Math.abs(h) % PATIENT_GROUP_ACCENTS.length];
 }
 
+/** أيقونة شبيهة بواتساب (شعار تقريبي) */
+function WhatsAppBrandIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className={className}
+      fill="currentColor"
+      aria-hidden
+    >
+      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.435 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+    </svg>
+  );
+}
+
 export default function OrdersPage() {
   const router = useRouter();
   const viewMode = useListViewStore((s) => s.viewMode);
@@ -278,6 +300,7 @@ export default function OrdersPage() {
   const { toast } = useToast();
   const { hasPermission } = usePermission();
   const canCreate = hasPermission('create:order');
+  const canSendWhatsApp = hasPermission('send:whatsapp');
   const [page, setPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState<OrderStatus | 'ALL'>('ALL');
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -291,6 +314,18 @@ export default function OrdersPage() {
   const [samples, setSamples] = useState<SampleFormItem[]>([newSampleItem()]);
   const [panelServicesMap, setPanelServicesMap] = useState<Record<string, PanelService[]>>({});
   const [loadingPanelIds, setLoadingPanelIds] = useState<Set<string>>(new Set());
+
+  const [waOpen, setWaOpen] = useState(false);
+  const [waPhone, setWaPhone] = useState('');
+  const [waMessage, setWaMessage] = useState('');
+  const [waTarget, setWaTarget] = useState<{
+    orderId: string;
+    patientId: string;
+    orderNumber: string;
+    patientFirst: string;
+    patientLast: string;
+    patientMrn: string;
+  } | null>(null);
 
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ['orders', page, statusFilter],
@@ -361,6 +396,37 @@ export default function OrdersPage() {
     if (!panel) return [];
     return panel.panelItems?.map((item) => item.labService) ?? panel.services ?? [];
   };
+
+  const openWaDialog = (order: Order) => {
+    const phone = order.patient.phone?.trim() ?? '';
+    setWaTarget({
+      orderId: order.id,
+      patientId: order.patient.id,
+      orderNumber: order.orderNumber,
+      patientFirst: order.patient.firstName,
+      patientLast: order.patient.lastName,
+      patientMrn: order.patient.mrn,
+    });
+    setWaPhone(phone);
+    setWaMessage(
+      `مرحباً ${order.patient.firstName} ${order.patient.lastName},\n\n` +
+        `نتائج تحاليلك لطلب رقم ${order.orderNumber} جاهزة.\n` +
+        `يرجى مراجعة الملف المرفق لعرض النتائج.\n\n` +
+        `مع تحيات فريق المختبر`,
+    );
+    setWaOpen(true);
+  };
+
+  const waMutation = useMutation({
+    mutationFn: (body: { phone: string; message: string; orderId: string; patientId: string }) =>
+      api.post('/api/v1/whatsapp/send', body),
+    onSuccess: () => {
+      setWaOpen(false);
+      setWaTarget(null);
+      toast.success('تم الإرسال عبر واتساب بنجاح');
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
 
   const createMutation = useMutation({
     mutationFn: () =>
@@ -574,9 +640,75 @@ export default function OrdersPage() {
                                   </td>
                                   <td className="px-4 py-3.5 text-start text-xs text-muted-foreground">{formatDateTime(order.createdAt)}</td>
                                   <td className="px-5 py-3.5 text-start" onClick={(e) => e.stopPropagation()}>
-                                    <Link href={`/orders/${order.id}`} className="text-xs font-semibold text-primary opacity-0 group-hover:opacity-100 transition-opacity hover:underline">
-                                      عرض
-                                    </Link>
+                                    <TooltipProvider delayDuration={250}>
+                                      <div className="flex items-center gap-1 justify-start flex-wrap">
+                                        <Tooltip>
+                                          <TooltipTrigger asChild>
+                                            <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 text-primary hover:bg-primary/10" asChild>
+                                              <Link
+                                                href={`/orders/${order.id}/report`}
+                                                onClick={(e) => e.stopPropagation()}
+                                                aria-label="عرض التقرير"
+                                              >
+                                                <FileText className="h-4 w-4" />
+                                              </Link>
+                                            </Button>
+                                          </TooltipTrigger>
+                                          <TooltipContent side="bottom">عرض التقرير</TooltipContent>
+                                        </Tooltip>
+                                        <Link
+                                          href={`/orders/${order.id}`}
+                                          className="text-xs font-semibold text-primary hover:underline shrink-0"
+                                          onClick={(e) => e.stopPropagation()}
+                                        >
+                                          عرض
+                                        </Link>
+                                        {canSendWhatsApp && order.status === 'COMPLETED' && (
+                                          order.patient.phone?.trim() ? (
+                                            <Tooltip>
+                                              <TooltipTrigger asChild>
+                                                <Button
+                                                  type="button"
+                                                  variant="ghost"
+                                                  size="icon"
+                                                  className="h-8 w-8 shrink-0 text-[#25D366] hover:text-[#128C7E] hover:bg-green-500/15"
+                                                  aria-label="إرسال النتائج عبر واتساب"
+                                                  onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    openWaDialog(order);
+                                                  }}
+                                                >
+                                                  <WhatsAppBrandIcon className="h-5 w-5" />
+                                                </Button>
+                                              </TooltipTrigger>
+                                              <TooltipContent side="bottom">
+                                                إرسال النتائج عبر واتساب (الرقم من ملف المريض)
+                                              </TooltipContent>
+                                            </Tooltip>
+                                          ) : (
+                                            <Tooltip>
+                                              <TooltipTrigger asChild>
+                                                <span className="inline-flex shrink-0">
+                                                  <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-8 w-8 text-muted-foreground"
+                                                    disabled
+                                                    aria-label="لا يوجد رقم هاتف مسجّل"
+                                                  >
+                                                    <WhatsAppBrandIcon className="h-5 w-5 opacity-35" />
+                                                  </Button>
+                                                </span>
+                                              </TooltipTrigger>
+                                              <TooltipContent side="bottom" className="max-w-[240px]">
+                                                لا يوجد رقم هاتف في ملف المريض — أضف الرقم من صفحة المرضى ثم أعد المحاولة
+                                              </TooltipContent>
+                                            </Tooltip>
+                                          )
+                                        )}
+                                      </div>
+                                    </TooltipProvider>
                                   </td>
                                 </tr>
                               ))}
@@ -635,28 +767,86 @@ export default function OrdersPage() {
                         </div>
                         <div className="grid gap-3 p-3 sm:grid-cols-2 lg:grid-cols-3 bg-muted/10">
                           {patientOrders.map((order) => (
-                            <Link
+                            <div
                               key={order.id}
-                              href={`/orders/${order.id}`}
                               className={cn(
-                                'rounded-lg border border-border bg-background p-3 shadow-sm card-hover flex flex-col gap-2 text-start',
+                                'rounded-lg border border-border bg-background shadow-sm flex flex-col overflow-hidden text-start',
                                 'border-s-[3px]',
                                 accent.replace('/70', '/50'),
                               )}
                             >
-                              <div className="flex items-start justify-between gap-2">
-                                <code className="ltr-isolate text-xs font-mono text-muted-foreground">{order.orderNumber}</code>
-                                <span className="text-[11px] text-muted-foreground">{formatDateTime(order.createdAt)}</span>
-                              </div>
-                              <div className="flex flex-wrap gap-1.5">
-                                <Badge className={cn('text-[11px] border-0 font-semibold', PRIORITY_COLORS[order.priority])}>
-                                  {PRIORITY_LABELS[order.priority] ?? order.priority}
-                                </Badge>
-                                <Badge className={cn('text-[11px] border-0 font-semibold', STATUS_COLORS[order.status])}>
-                                  {STATUS_LABELS[order.status] ?? order.status}
-                                </Badge>
-                              </div>
-                            </Link>
+                              <Link
+                                href={`/orders/${order.id}`}
+                                className="p-3 flex flex-col gap-2 card-hover flex-1"
+                              >
+                                <div className="flex items-start justify-between gap-2">
+                                  <code className="ltr-isolate text-xs font-mono text-muted-foreground">{order.orderNumber}</code>
+                                  <span className="text-[11px] text-muted-foreground">{formatDateTime(order.createdAt)}</span>
+                                </div>
+                                <div className="flex flex-wrap gap-1.5">
+                                  <Badge className={cn('text-[11px] border-0 font-semibold', PRIORITY_COLORS[order.priority])}>
+                                    {PRIORITY_LABELS[order.priority] ?? order.priority}
+                                  </Badge>
+                                  <Badge className={cn('text-[11px] border-0 font-semibold', STATUS_COLORS[order.status])}>
+                                    {STATUS_LABELS[order.status] ?? order.status}
+                                  </Badge>
+                                </div>
+                              </Link>
+                              <TooltipProvider delayDuration={250}>
+                                <div className="flex justify-end items-center gap-0.5 border-t border-border px-2 py-1.5 bg-muted/25">
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Button variant="ghost" size="sm" className="h-8 gap-1 px-2 text-primary" asChild>
+                                        <Link href={`/orders/${order.id}/report`}>
+                                          <FileText className="h-4 w-4" />
+                                          <span className="text-xs font-semibold">تقرير</span>
+                                        </Link>
+                                      </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>عرض التقرير</TooltipContent>
+                                  </Tooltip>
+                                  {canSendWhatsApp && order.status === 'COMPLETED' && (
+                                    order.patient.phone?.trim() ? (
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="sm"
+                                            className="h-8 gap-1.5 px-2 text-[#25D366] hover:text-[#128C7E] hover:bg-green-500/10"
+                                            onClick={() => openWaDialog(order)}
+                                          >
+                                            <WhatsAppBrandIcon className="h-4 w-4" />
+                                            <span className="text-xs font-semibold">واتساب</span>
+                                          </Button>
+                                        </TooltipTrigger>
+                                        <TooltipContent>إرسال النتائج (رقم المريض المحفوظ)</TooltipContent>
+                                      </Tooltip>
+                                    ) : (
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <span className="inline-flex">
+                                            <Button
+                                              type="button"
+                                              variant="ghost"
+                                              size="sm"
+                                              className="h-8 gap-1 px-2 text-muted-foreground"
+                                              disabled
+                                            >
+                                              <WhatsAppBrandIcon className="h-4 w-4 opacity-35" />
+                                              <span className="text-xs">واتساب</span>
+                                            </Button>
+                                          </span>
+                                        </TooltipTrigger>
+                                        <TooltipContent className="max-w-[220px]">
+                                          لا يوجد رقم هاتف في ملف المريض
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    )
+                                  )}
+                                </div>
+                              </TooltipProvider>
+                            </div>
                           ))}
                         </div>
                       </div>
@@ -692,6 +882,91 @@ export default function OrdersPage() {
           </>
         )}
       </div>
+
+      {/* إرسال واتساب — طلب مكتمل فقط من الجدول */}
+      <Dialog open={waOpen} onOpenChange={setWaOpen}>
+        <DialogContent className="max-w-lg" onClick={(e) => e.stopPropagation()}>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <WhatsAppBrandIcon className="h-5 w-5 text-[#25D366]" />
+              إرسال النتائج عبر واتساب
+            </DialogTitle>
+            <DialogDescription>
+              يُستخدم رقم الهاتف المحفوظ في ملف المريض (يمكنك تعديله قبل الإرسال إن لزم)
+            </DialogDescription>
+          </DialogHeader>
+
+          {waTarget && (
+            <div className="space-y-4 pt-1">
+              <div className="rounded-lg border bg-muted/40 p-3 text-sm space-y-1">
+                <p className="font-semibold text-foreground">
+                  {waTarget.patientFirst} {waTarget.patientLast}
+                </p>
+                <p className="text-muted-foreground text-xs ltr-isolate">
+                  طلب {waTarget.orderNumber} • رقم الملف {waTarget.patientMrn}
+                </p>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="orders-wa-phone">
+                  رقم الهاتف <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="orders-wa-phone"
+                  type="tel"
+                  placeholder="من ملف المريض أو أدخل الرقم يدوياً"
+                  value={waPhone}
+                  onChange={(e) => setWaPhone(e.target.value)}
+                  className="font-mono"
+                  dir="ltr"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="orders-wa-msg">نص الرسالة</Label>
+                <Textarea
+                  id="orders-wa-msg"
+                  value={waMessage}
+                  onChange={(e) => setWaMessage(e.target.value)}
+                  rows={5}
+                  className="text-sm resize-none"
+                />
+              </div>
+            </div>
+          )}
+
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setWaOpen(false)}>
+              إلغاء
+            </Button>
+            <Button
+              className="gap-2 bg-[#25D366] hover:bg-[#128C7E] text-white"
+              disabled={
+                waMutation.isPending ||
+                !waTarget ||
+                !waPhone.trim() ||
+                !waMessage.trim()
+              }
+              onClick={() => {
+                if (!waTarget) return;
+                waMutation.mutate({
+                  phone: waPhone.trim(),
+                  message: waMessage.trim(),
+                  orderId: waTarget.orderId,
+                  patientId: waTarget.patientId,
+                });
+              }}
+            >
+              {waMutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <WhatsAppBrandIcon className="h-4 w-4" />
+              )}
+              {waMutation.isPending ? 'جارٍ الإرسال...' : 'إرسال'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* New Order Dialog */}
       <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) resetDialog(); }}>

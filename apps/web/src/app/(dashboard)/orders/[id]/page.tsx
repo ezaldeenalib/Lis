@@ -6,7 +6,7 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
   ArrowLeft, Loader2, CheckCircle, Edit3, PackageCheck,
-  Printer, Receipt, FileText, Info, Layers, FlaskConical,
+  Printer, Receipt, FileText, Info, Layers, FlaskConical, MessageSquare,
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
@@ -90,7 +90,7 @@ interface Order {
   id: string; orderNumber: string; priority: OrderPriority;
   status: OrderStatus; clinicalNotes: string | null; physicianName: string | null;
   createdAt: string;
-  patient: { id: string; firstName: string; lastName: string; mrn: string };
+  patient: { id: string; firstName: string; lastName: string; mrn: string; phone?: string | null };
   samples: Sample[];
 }
 
@@ -247,6 +247,11 @@ function OrderDetailContent() {
   const [selValTest,    setSelValTest]    = useState<SampleTest | null>(null);
   const [validateNotes, setValidateNotes] = useState('');
 
+  // WhatsApp state
+  const [waDialogOpen, setWaDialogOpen] = useState(false);
+  const [waPhone,      setWaPhone]      = useState('');
+  const [waMessage,    setWaMessage]    = useState('');
+
   // queries
   const { data: order, isLoading, isError, error } = useQuery({
     queryKey: ['order', id],
@@ -318,6 +323,16 @@ function OrderDetailContent() {
     onError: (err: Error) => toast.error(err.message),
   });
 
+  const waMutation = useMutation({
+    mutationFn: (body: { phone: string; message: string; orderId: string; patientId: string }) =>
+      api.post('/api/v1/whatsapp/send', body),
+    onSuccess: () => {
+      setWaDialogOpen(false);
+      toast.success('تم الإرسال عبر واتساب بنجاح');
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
   // dialog helpers
   const openEnterDialog = useCallback((test: SampleTest, sample: Sample) => {
     setSelTest(test);
@@ -369,10 +384,24 @@ function OrderDetailContent() {
 
   // permissions — use fine-grained permission checks, not role name heuristics
   const { hasPermission } = usePermission();
-  const canEnterResults = hasPermission('create:result');
-  const canValidate     = hasPermission('validate:result');
+  const canEnterResults  = hasPermission('create:result');
+  const canValidate      = hasPermission('validate:result');
   const canReceiveSample = hasPermission('update:sample');
   const canCreateInvoice = hasPermission('create:invoice');
+  const canSendWhatsApp  = hasPermission('send:whatsapp');
+
+  const openWaDialog = () => {
+    if (!order) return;
+    const phone = order.patient.phone?.trim() ?? '';
+    const msg =
+      `مرحباً ${order.patient.firstName} ${order.patient.lastName},\n\n` +
+      `نتائج تحاليلك لطلب رقم ${order.orderNumber} جاهزة.\n` +
+      `يرجى مراجعة الملف المرفق لعرض النتائج.\n\n` +
+      `مع تحيات فريق المختبر`;
+    setWaPhone(phone);
+    setWaMessage(msg);
+    setWaDialogOpen(true);
+  };
 
   if (isLoading) return (
     <div className="space-y-6">
@@ -518,6 +547,18 @@ function OrderDetailContent() {
                 onClick={() => openEnterDialog(pendingFlat[0].test, pendingFlat[0].sample)}>
                 <Edit3 className="h-4 w-4" />
                 إدخال النتائج ({pendingFlat.length} تحليل)
+              </Button>
+            )}
+
+            {canSendWhatsApp && order.status === 'COMPLETED' && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1.5 border-green-400/50 text-green-700 hover:bg-green-50 hover:border-green-500"
+                onClick={openWaDialog}
+              >
+                <MessageSquare className="h-4 w-4" />
+                إرسال عبر واتساب
               </Button>
             )}
           </div>
@@ -892,6 +933,91 @@ function OrderDetailContent() {
                 ? <Loader2 className="h-4 w-4 animate-spin" />
                 : <CheckCircle className="me-1 h-4 w-4" />}
               اعتماد النتيجة
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ═══ WHATSAPP DIALOG ════════════════════════════════════════════════════ */}
+      <Dialog open={waDialogOpen} onOpenChange={setWaDialogOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <MessageSquare className="h-5 w-5 text-green-600" />
+              إرسال النتائج عبر واتساب
+            </DialogTitle>
+            <DialogDescription>
+              سيتم إرسال رسالة نصية وملف PDF بالنتائج مباشرةً إلى هاتف المريض
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 pt-1">
+            {/* Patient info summary */}
+            <div className="rounded-lg border bg-muted/40 p-3 text-sm space-y-1">
+              <p className="font-semibold text-foreground">
+                {order?.patient.firstName} {order?.patient.lastName}
+              </p>
+              <p className="text-muted-foreground text-xs">
+                طلب رقم: {order?.orderNumber} • رقم الملف: {order?.patient.mrn}
+              </p>
+            </div>
+
+            {/* Phone number */}
+            <div className="space-y-1.5">
+              <Label htmlFor="wa-phone">
+                رقم الهاتف <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="wa-phone"
+                type="tel"
+                placeholder="مثال: 07701234567"
+                value={waPhone}
+                onChange={(e) => setWaPhone(e.target.value)}
+                className="font-mono"
+                dir="ltr"
+              />
+              <p className="text-xs text-muted-foreground">
+                يُعرض الرقم من ملف المريض؛ يمكنك تعديله. صيغ مقبولة: 07XXXXXXXXX أو +9647...
+              </p>
+            </div>
+
+            {/* Message */}
+            <div className="space-y-1.5">
+              <Label htmlFor="wa-msg">نص الرسالة</Label>
+              <Textarea
+                id="wa-msg"
+                value={waMessage}
+                onChange={(e) => setWaMessage(e.target.value)}
+                rows={5}
+                className="text-sm resize-none"
+              />
+              <p className="text-xs text-muted-foreground">
+                سيُضاف ملف PDF بنتائج التحاليل كمرفق مع الرسالة
+              </p>
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setWaDialogOpen(false)}>
+              إلغاء
+            </Button>
+            <Button
+              className="gap-2 bg-green-600 hover:bg-green-700"
+              disabled={waMutation.isPending || !waPhone.trim() || !waMessage.trim()}
+              onClick={() => {
+                if (!order || !waPhone.trim()) return;
+                waMutation.mutate({
+                  phone: waPhone.trim(),
+                  message: waMessage.trim(),
+                  orderId: order.id,
+                  patientId: order.patient.id,
+                });
+              }}
+            >
+              {waMutation.isPending
+                ? <Loader2 className="h-4 w-4 animate-spin" />
+                : <MessageSquare className="h-4 w-4" />}
+              {waMutation.isPending ? 'جارٍ الإرسال...' : 'إرسال'}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -377,7 +377,7 @@ export class ResultsService {
     deviceCode: string,
     laboratoryId: string,
   ): Promise<string> {
-    const cacheKey = `${laboratoryId}|${barcode}|${deviceId}|${deviceCode}`;
+    const cacheKey = `${laboratoryId}|${barcode}|${deviceId.trim().toLowerCase()}|${deviceCode.trim().toLowerCase()}`;
     const cached = this.resolveCache.get(cacheKey);
     if (cached && cached.expiresAt > Date.now()) {
       return cached.sampleTestId;
@@ -399,8 +399,8 @@ export class ResultsService {
     const mapping = await this.prisma.$queryRaw<{ lab_service_id: string }[]>`
       SELECT lab_service_id FROM device_test_mappings
       WHERE laboratory_id = ${laboratoryId}
-        AND device_id    = ${deviceId}
-        AND device_code  = ${deviceCode.toUpperCase().trim()}
+        AND LOWER(TRIM(device_id))    = LOWER(TRIM(${deviceId}))
+        AND LOWER(TRIM(device_code))  = LOWER(TRIM(${deviceCode}))
       LIMIT 1
     `;
     if (!mapping.length) {
@@ -495,7 +495,7 @@ export class ResultsService {
             laboratoryId,
             deviceId: dto.deviceId,
             barcode: dto.barcode,
-            deviceCode: item.code.toUpperCase().trim(),
+            deviceCode: item.code.trim(),
             value: item.value,
             status,
             sampleTestId: sampleTestId ?? null,

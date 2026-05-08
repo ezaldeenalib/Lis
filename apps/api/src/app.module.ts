@@ -19,6 +19,7 @@ import { DashboardModule } from './dashboard/dashboard.module';
 import { RealtimeModule } from './realtime/realtime.module';
 import { InvoicesModule } from './invoices/invoices.module';
 import { DeviceMappingsModule } from './device-mappings/device-mappings.module';
+import { WhatsAppModule } from './whatsapp/whatsapp.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { TenantMiddleware } from './common/tenant.middleware';
 
@@ -43,6 +44,7 @@ import { TenantMiddleware } from './common/tenant.middleware';
     RealtimeModule,
     InvoicesModule,
     DeviceMappingsModule,
+    WhatsAppModule,
   ],
   providers: [
     {

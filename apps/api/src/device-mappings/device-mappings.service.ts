@@ -15,7 +15,9 @@ export class DeviceMappingsService {
     if (!laboratoryId) throw new BadRequestException('Laboratory context required');
 
     const mappings = await this.prisma.deviceTestMapping.findMany({
-      where: { deviceId },
+      where: {
+        deviceId: { equals: deviceId.trim(), mode: 'insensitive' as const },
+      },
       include: {
         labService: { select: { id: true, code: true, name: true } },
       },
@@ -61,25 +63,41 @@ export class DeviceMappingsService {
       throw new BadRequestException(`Invalid labServiceId(s): ${invalid.join(', ')}`);
     }
 
+    const trimmedDeviceId = dto.deviceId.trim();
+    const trimmedCodes = dto.mappings.map((m) => m.deviceCode.trim());
+    const seenLower = new Set<string>();
+    for (const c of trimmedCodes) {
+      const key = c.toLowerCase();
+      if (seenLower.has(key)) {
+        throw new BadRequestException(
+          'Duplicate device test codes in the same save (ignored letter case)',
+        );
+      }
+      seenLower.add(key);
+    }
+
     await this.prisma.$transaction(async (tx) => {
       // Remove all existing mappings for this device in this lab
       await tx.deviceTestMapping.deleteMany({
-        where: { laboratoryId, deviceId: dto.deviceId },
+        where: {
+          laboratoryId,
+          deviceId: { equals: trimmedDeviceId, mode: 'insensitive' as const },
+        },
       });
 
       // Insert the new set
       await tx.deviceTestMapping.createMany({
         data: dto.mappings.map((m) => ({
           laboratoryId,
-          deviceId: dto.deviceId,
-          deviceCode: m.deviceCode.toUpperCase().trim(),
+          deviceId: trimmedDeviceId,
+          deviceCode: m.deviceCode.trim(),
           labServiceId: m.labServiceId,
         })),
         skipDuplicates: true,
       });
     });
 
-    return this.getByDevice(dto.deviceId);
+    return this.getByDevice(trimmedDeviceId);
   }
 
   /**

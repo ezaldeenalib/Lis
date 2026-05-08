@@ -96,7 +96,7 @@ export class DashboardService {
       orderBy: { createdAt: 'desc' },
       include: {
         patient: {
-          select: { id: true, firstName: true, lastName: true, mrn: true },
+          select: { id: true, firstName: true, lastName: true, mrn: true, phone: true },
         },
       },
     });
