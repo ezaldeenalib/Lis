@@ -143,52 +143,25 @@ async function fetchDefaultDeviceRaw(
 }
 
 /**
- * Build the exact `device` object the agent expects (avoids "No value for name").
+ * Map an agent device payload to the UI-facing shape WITHOUT mutating it.
+ *
+ * IMPORTANT: We never modify the raw device object; the Zebra agent compares the
+ * payload we send back to its registered device list and returns
+ * "Unauthorized device detected" if any field differs. We only read fields here
+ * for display/lookup; the original raw object is what gets sent on `write`.
  */
-function normalizeDevicePayload(
-  raw: Record<string, unknown>,
-): {
-  name: string;
-  uid: string;
-  connection: string;
-  deviceType: string;
-  version: number;
-  provider: string;
-  manufacturer: string;
-} {
+function mapRawToZebraPrinter(raw: Record<string, unknown>): ZebraPrinter {
   const uid = String(raw.uid ?? '').trim();
-  let name = String(raw.name ?? '').trim();
-  if (!name) name = uid || 'Zebra Printer';
-
-  const connection = String(raw.connection ?? 'network');
+  const name = String(raw.name ?? '').trim() || uid || 'Zebra Printer';
+  const connection = String(raw.connection ?? '');
   const deviceType = String(raw.deviceType ?? 'printer');
-  const ver = raw.version;
-  const version =
-    typeof ver === 'number' && !Number.isNaN(ver)
-      ? ver
-      : Number(ver) || 1;
-  const provider = String(raw.provider ?? 'zebra_browser_print');
-  const manufacturer = String(raw.manufacturer ?? 'Zebra Technologies');
-
+  const provider = String(raw.provider ?? '');
   return {
-    name,
     uid: uid || name,
+    name,
     connection,
     deviceType,
-    version,
     provider,
-    manufacturer,
-  };
-}
-
-function mapRawToZebraPrinter(raw: Record<string, unknown>): ZebraPrinter {
-  const n = normalizeDevicePayload(raw);
-  return {
-    uid: n.uid,
-    name: n.name,
-    connection: n.connection,
-    deviceType: n.deviceType,
-    provider: n.provider,
   };
 }
 
@@ -215,6 +188,9 @@ export async function getDefaultPrinter(): Promise<ZebraPrinter | null> {
 const SSL_HINT_AR =
   'اقبل الشهادة على: https://localhost:9101/ssl_support وعلى https://127.0.0.1:9101/ssl_support إن لزم. يمكنك أيضاً تعيين NEXT_PUBLIC_ZEBRA_AGENT_ORIGIN في .env ليطابق العنوان الذي قبلت شهادته.';
 
+const UNAUTHORIZED_HINT_AR =
+  'الوكيل لم يتعرّف على الطابعة. افتح أيقونة Zebra Browser Print بجانب الساعة، اختر طابعة Zebra من القائمة واضغط Set as Default، ثم أعد المحاولة. إن لم تظهر الطابعة، أعد توصيلها أو أعد تشغيل خدمة Zebra Browser Print.';
+
 export async function sendZPL(
   zpl: string,
   deviceUid?: string,
@@ -239,8 +215,7 @@ export async function sendZPL(
   let raw: Record<string, unknown> | null = null;
   if (deviceUid) {
     const all = await fetchAvailableRaw(base);
-    raw =
-      all.find((d) => String(d.uid ?? '') === deviceUid) ?? null;
+    raw = all.find((d) => String(d.uid ?? '') === deviceUid) ?? null;
   } else {
     raw = await fetchDefaultDeviceRaw(base);
   }
@@ -254,8 +229,10 @@ export async function sendZPL(
     };
   }
 
-  const device = normalizeDevicePayload(raw);
-  const body = { device, data: zpl };
+  // Send the raw device object exactly as the agent returned it. Any mutation
+  // (defaults, casing changes, missing fields) makes the agent reply with
+  // "Unauthorized device detected" because it compares against its registered list.
+  const body = { device: raw, data: zpl };
 
   try {
     const { ok, status, text } = await fetchText(`${base}write`, {
@@ -264,10 +241,16 @@ export async function sendZPL(
       body: JSON.stringify(body),
     });
     if (ok) return { ok: true };
+
+    const detail = (text || '').trim();
+    const isUnauthorizedDevice = /unauthorized\s*device/i.test(detail);
+    const message = isUnauthorizedDevice
+      ? `فشل الطباعة (${status}): ${detail}. ${UNAUTHORIZED_HINT_AR}`
+      : `فشل الطباعة (${status}): ${detail || 'بدون تفاصيل'}.`;
     return {
       ok: false,
       code: 'SEND_FAILED',
-      message: `فشل الطباعة (${status}): ${text || 'بدون تفاصيل'}. ${SSL_HINT_AR}`,
+      message,
     };
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
