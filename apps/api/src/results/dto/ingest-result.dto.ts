@@ -33,7 +33,7 @@ export class IngestItemDto {
 }
 
 export class IngestResultDto {
-  @ApiProperty({ example: 'S-20260425-001', description: 'Sample barcode from the label' })
+  @ApiProperty({ example: '2600000001', description: '10-digit numeric sample barcode from the label (format: YYXXXXXXXX)' })
   @IsString()
   @MinLength(1)
   barcode!: string;

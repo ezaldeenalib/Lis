@@ -1,106 +1,114 @@
 /**
  * ZPL barcode label generator for Zebra printers.
- * Targets a 50mm × 25mm (≈ 400 × 200 dots at 203 DPI) label.
+ * Label: 50 mm × 30 mm  (400 × 240 dots @ 203 DPI)
  *
- * Uses Code 128 barcode (^BC) which supports full ASCII.
+ * Arabic rendering notes:
+ *   ^CI28 activates UTF-8.  On modern Zebra firmware (Link-OS, ZD/ZT series)
+ *   Arabic text in ^FD renders correctly.  On older firmware it appears blank.
+ *   We therefore always print MRN (numeric, guaranteed ASCII) prominently under
+ *   the barcode so staff can identify the sample on any printer model.
+ *   The patient name in Row-1 shows on capable printers.
+ *
+ * Barcode value: numeric YYXXXXXXXX — compatible with ASTM / all analyzers.
  */
 
 export interface BarcodeLabelData {
   patientName: string;
-  patientId: string;       // MRN
+  patientId: string;    // MRN
   sampleType: string;
-  date: string;            // formatted date string
-  barcode: string;         // the sample barcode value (e.g. S-20260403-001)
+  date: string;
+  barcode: string;
   age?: string | null;
   sex?: string | null;
-  testNames?: string[];    // optional list of test names
+  testNames?: string[];
 }
 
-/**
- * Truncate a string to fit within a given character count, appending "…" if truncated.
- */
+/** Remove ZPL control characters that would break a field. */
+function safe(s: string): string {
+  return (s ?? '').replace(/[\^~\\]/g, ' ').trim();
+}
+
+/** Truncate with ".." if longer than max chars. */
 function trunc(s: string, max: number): string {
   return s.length > max ? s.slice(0, max - 1) + '..' : s;
 }
 
 /**
- * Generate a ZPL string for a single barcode label.
- *
- * Layout (50mm × 25mm, 203 DPI → 400 × 200 dots):
- * ┌────────────────────────────────────────┐
- * │ Patient Name          MRN             │  row 1
- * │ Sample Type  | Age/Sex | Date         │  row 2
- * │ ║║║║║║║ BARCODE ║║║║║║║               │  row 3-4
- * │ S-20260403-001                        │  below barcode
- * │ Tests: CBC, ...                       │  row 5 (optional)
- * └────────────────────────────────────────┘
+ * Layout (400 × 240 dots):
+ * ┌─────────────────────────────────────────┐
+ * │  Patient Name (Arabic/Latin)   MRN      │  y=8   ← shows on modern Zebra
+ * │  SampleType | Age | Sex        Date     │  y=34
+ * ├─────────────────────────────────────────┤  y=57
+ * │  ║║║║║║  BARCODE  ║║║║║║               │  y=65
+ * │  2600000001  (auto from ^BC)            │
+ * │  MRN: 000123   (large, always visible)  │  y=138
+ * │  Tests: CBC, WBC, ...                   │  y=162
+ * └─────────────────────────────────────────┘
  */
 export function generateBarcodeZPL(data: BarcodeLabelData): string {
-  const {
-    patientName,
-    patientId,
-    sampleType,
-    date,
-    barcode,
-    age,
-    sex,
-    testNames,
-  } = data;
+  const patientName = safe(data.patientName);
+  const mrn         = safe(data.patientId);
+  const sampleType  = safe(data.sampleType);
+  const dateStr     = safe(data.date);
+  const barcodeVal  = safe(data.barcode);
 
-  const nameStr = trunc(patientName, 22);
-  const mrnStr = trunc(patientId, 14);
+  // Row-1: truncate to fit 400-dot width at font size 22
+  const nameRow1 = trunc(patientName, 20);
+  const mrnRow1  = trunc(mrn, 14);
 
+  // Row-2: meta
   const metaParts = [sampleType];
-  if (age) metaParts.push(age);
-  if (sex) metaParts.push(sex);
+  if (data.age) metaParts.push(safe(data.age));
+  if (data.sex) metaParts.push(safe(data.sex));
   const metaStr = trunc(metaParts.join(' | '), 26);
 
-  const testsStr =
-    testNames && testNames.length > 0
-      ? trunc(testNames.join(', '), 38)
-      : '';
+  // Tests line (ASCII codes like CBC, WBC — always visible)
+  const testsStr = data.testNames && data.testNames.length > 0
+    ? trunc(data.testNames.map(safe).join(', '), 40)
+    : '';
 
-  const zpl = [
+  // MRN displayed below barcode in large text — works on ALL printers
+  const mrnLine = mrn.length > 0 ? `MRN: ${mrn}` : '';
+
+  const lines: string[] = [
     '^XA',
-    // Label dimensions: 400 dots wide, 200 dots tall
     '^PW400',
-    '^LL200',
-    // Use UTF-8 for Arabic/multilingual (CI28)
+    '^LL240',
+
+    // UTF-8 — Arabic renders on modern Zebra firmware (Link-OS)
     '^CI28',
 
-    // Row 1: patient name (left) + MRN (right)
-    `^FO10,10^A0N,22,22^FD${nameStr}^FS`,
-    `^FO260,10^A0N,20,20^FD${mrnStr}^FS`,
+    // ── Row 1: اسم المريض (left, large) + MRN (right, smaller) ──────────
+    `^FO8,8^A0N,22,22^FD${nameRow1}^FS`,
+    `^FO260,10^A0N,18,18^FD${mrnRow1}^FS`,
 
-    // Row 2: meta line (sample type | age/sex | date)
-    `^FO10,38^A0N,18,18^FD${metaStr}^FS`,
-    `^FO280,38^A0N,18,18^FD${date}^FS`,
+    // ── Row 2: نوع العينة | التاريخ ───────────────────────────────────────
+    `^FO8,34^A0N,17,17^FD${metaStr}^FS`,
+    `^FO270,34^A0N,17,17^FD${dateStr}^FS`,
 
-    // Separator line
-    '^FO10,60^GB380,1,1^FS',
+    // ── Divider ────────────────────────────────────────────────────────────
+    '^FO8,57^GB384,1,1^FS',
 
-    // Row 3-4: Code 128 barcode
-    // ^BY2 = module width 2 dots; ^BCN,60,Y,N,N = height 60, interpretation line below
-    '^FO30,68^BY2',
-    `^BCN,60,Y,N,N^FD${barcode}^FS`,
+    // ── Barcode (Code 128, height 50, human-readable line printed by ^BC) ─
+    '^FO30,65^BY2',
+    `^BCN,50,Y,N,N^FD${barcodeVal}^FS`,
 
-    // Row 5: tests (optional, below barcode)
-    ...(testsStr
-      ? [`^FO10,150^A0N,16,16^FD${testsStr}^FS`]
-      : []),
+    // ── MRN in large bold text below barcode (ASCII → always visible) ──────
+    ...(mrnLine ? [`^FO8,138^A0N,20,20^FD${mrnLine}^FS`] : []),
 
-    // Separator at bottom
-    '^FO10,175^GB380,1,1^FS',
+    // ── Test codes (ASCII lab codes like CBC, WBC → always visible) ────────
+    ...(testsStr ? [`^FO8,162^A0N,14,14^FD${testsStr}^FS`] : []),
+
+    // ── Bottom divider ─────────────────────────────────────────────────────
+    '^FO8,198^GB384,1,1^FS',
 
     '^XZ',
   ];
 
-  return zpl.join('\n');
+  return lines.join('\n');
 }
 
-/**
- * Generate ZPL for multiple copies of the same label.
- */
+/** Generate ZPL for N identical copies of one label. */
 export function generateMultiCopyZPL(
   data: BarcodeLabelData,
   copies: number,

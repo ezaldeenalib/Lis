@@ -57,9 +57,10 @@ interface Sample {
     patient: {
       firstName: string;
       lastName: string;
+      mrn: string;
     };
   };
-  sampleTests: { id: string }[];
+  sampleTests: { id: string; labService: { code: string; name: string } }[];
   createdAt: string;
 }
 
@@ -167,10 +168,11 @@ export default function SamplesPage() {
   const handlePrint = (sample: Sample) => {
     printBarcode({
       patientName: `${sample.order.patient.firstName} ${sample.order.patient.lastName}`,
-      patientId: '',
+      patientId: sample.order.patient.mrn,
       sampleType: sample.sampleType,
       date: formatDate(sample.createdAt),
       barcode: sample.barcode,
+      testNames: sample.sampleTests.map((st) => st.labService.code),
     });
   };
 

@@ -49,6 +49,26 @@ services:
       JWT_EXPIRATION: 24h
       API_PORT: 4000
       NODE_ENV: production
+      # Prisma: set RUN_MIGRATIONS_ON_BOOT=0 if you run `npm run db:deploy` in a separate Job.
+      RUN_MIGRATIONS_ON_BOOT: ${RUN_MIGRATIONS_ON_BOOT:-1}
+      PRISMA_SCHEMA_PATH: libs/database/prisma/schema.prisma
+      # WhatsApp: mount WHATSAPP_AUTH_DATA_PATH; disable on replicas with WHATSAPP_ENABLED=0
+      WHATSAPP_ENABLED: ${WHATSAPP_ENABLED:-1}
+      WHATSAPP_AUTH_DATA_PATH: /var/lib/lis/whatsapp-auth
+    volumes:
+      - whatsapp_auth_data:/var/lib/lis/whatsapp-auth
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "require('http').get('http://127.0.0.1:4000/api/v1/health/live',(r)=>{r.resume();r.on('end',()=>process.exit(r.statusCode===200?0:1));}).on('error',()=>process.exit(1));",
+        ]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
     depends_on:
       postgres:
         condition: service_healthy
@@ -67,8 +87,10 @@ services:
       NEXT_PUBLIC_API_URL: http://api:4000
       NODE_ENV: production
     depends_on:
-      - api
+      api:
+        condition: service_healthy
 
 volumes:
   postgres_data:
   redis_data:
+  whatsapp_auth_data:

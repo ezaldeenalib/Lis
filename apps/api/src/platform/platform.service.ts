@@ -1,11 +1,14 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { TenantPrismaService } from '../database/tenant-prisma.service';
 import { AuthService } from '../auth/auth.service';
 import { CreateLaboratoryDto } from './dto/create-laboratory.dto';
-import { DEFAULT_PERMISSIONS, DEFAULT_ROLES } from '../common/types';
+import { DEFAULT_ROLES } from '../common/types';
+import { seedLabServiceCatalogForLaboratory } from '../lab-catalog/seed-lab-service-catalog';
 
 @Injectable()
 export class PlatformService {
+  private readonly logger = new Logger(PlatformService.name);
+
   constructor(
     private prisma: TenantPrismaService,
     private authService: AuthService,
@@ -41,6 +44,18 @@ export class PlatformService {
         email: dto.email,
       },
     });
+
+    try {
+      const { inserted } = await seedLabServiceCatalogForLaboratory(this.prisma, lab.id);
+      this.logger.log(
+        `Laboratory "${lab.slug}": lab service catalog seeded (+${inserted} new analyses)`,
+      );
+    } catch (e) {
+      this.logger.error(
+        `Failed to seed lab service catalog for ${lab.id}: ${e instanceof Error ? e.message : String(e)}`,
+      );
+      throw e;
+    }
 
     const allPermissions = await this.prisma.permission.findMany();
     const permMap = new Map(allPermissions.map((p) => [`${p.action}:${p.subject}`, p.id]));

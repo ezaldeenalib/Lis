@@ -34,7 +34,11 @@ export class SamplesService {
         orderBy: { createdAt: 'desc' },
         include: {
           order: { include: { patient: true } },
-          sampleTests: true,
+          sampleTests: {
+            include: {
+              labService: { select: { code: true, name: true } },
+            },
+          },
         },
       }),
       this.prisma.sample.count({ where }),

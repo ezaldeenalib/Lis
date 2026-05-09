@@ -1,25 +1,63 @@
 import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 import { WhatsAppSendStatus } from '@prisma/client';
 import { Client, LocalAuth, MessageMedia } from 'whatsapp-web.js';
 import * as qrcode from 'qrcode';
 import { TenantPrismaService } from '../database/tenant-prisma.service';
 
-export type WAStatus = 'DISCONNECTED' | 'CONNECTING' | 'CONNECTED';
+export type WAStatus = 'DISCONNECTED' | 'CONNECTING' | 'CONNECTED' | 'DISABLED';
 
 @Injectable()
 export class WhatsAppService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(WhatsAppService.name);
+
+  /** Root directory where whatsapp-web.js stores LocalAuth payloads (outside git in prod). */
+  private readonly whatsappAuthDataPath: string;
+  /** When false (WHATSAPP_ENABLED=0|false|no|off): no Puppeteer / session on this instance. */
+  private readonly whatsappEnabled: boolean;
 
   private client: Client | null = null;
   private _status: WAStatus = 'DISCONNECTED';
   private _qrDataUrl: string | null = null;
   private _reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 
-  constructor(private readonly prisma: TenantPrismaService) {}
+  constructor(
+    private readonly prisma: TenantPrismaService,
+    private readonly config: ConfigService,
+  ) {
+    const rawEnable = (
+      this.config.get<string>('WHATSAPP_ENABLED', 'true') ?? 'true'
+    ).trim()
+      .toLowerCase();
+    this.whatsappEnabled = !['0', 'false', 'no', 'off'].includes(rawEnable);
+
+    const fromEnv =
+      this.config.get<string>('WHATSAPP_AUTH_DATA_PATH', '') ?? '';
+    this.whatsappAuthDataPath =
+      fromEnv.trim() !== ''
+        ? path.resolve(fromEnv.trim())
+        : path.join(process.cwd(), '.wwebjs_auth');
+  }
 
   // ── Lifecycle ──────────────────────────────────────────────────────────────
 
   async onModuleInit() {
+    if (!this.whatsappEnabled) {
+      this._status = 'DISABLED';
+      this.logger.log(
+        'WHATSAPP_ENABLED is off — wa.me session not started on this replica.',
+      );
+      return;
+    }
+
+    try {
+      fs.mkdirSync(this.whatsappAuthDataPath, { recursive: true, mode: 0o700 });
+    } catch {
+      /* non-fatal: LocalAuth may still create subdirs */
+    }
+
     this.startClient();
   }
 
@@ -34,7 +72,11 @@ export class WhatsAppService implements OnModuleInit, OnModuleDestroy {
   get qrDataUrl(): string | null { return this._qrDataUrl; }
 
   getStatusInfo() {
-    return { status: this._status, qr: this._qrDataUrl };
+    return {
+      enabled: this.whatsappEnabled,
+      status: this._status,
+      qr: this._qrDataUrl,
+    };
   }
 
   // ── Client lifecycle ───────────────────────────────────────────────────────
@@ -45,8 +87,16 @@ export class WhatsAppService implements OnModuleInit, OnModuleDestroy {
     this._qrDataUrl = null;
 
     try {
+      const sessionId = (
+        this.config.get<string>('WHATSAPP_SESSION_ID', '') ?? ''
+      ).trim();
+      const localOpts: { dataPath: string; clientId?: string } = {
+        dataPath: this.whatsappAuthDataPath,
+      };
+      if (sessionId) localOpts.clientId = sessionId;
+
       this.client = new Client({
-        authStrategy: new LocalAuth({ dataPath: '.wwebjs_auth' }),
+        authStrategy: new LocalAuth(localOpts),
         puppeteer: {
           headless: true,
           args: [
@@ -117,6 +167,10 @@ export class WhatsAppService implements OnModuleInit, OnModuleDestroy {
   }
 
   async disconnect() {
+    if (!this.whatsappEnabled) {
+      this.logger.warn('disconnect() ignored — WhatsApp is disabled on this instance.');
+      return;
+    }
     this.clearReconnectTimer();
     try { await this.client?.logout(); } catch { /* ignore */ }
     try { await this.client?.destroy(); } catch { /* ignore */ }
@@ -160,6 +214,9 @@ export class WhatsAppService implements OnModuleInit, OnModuleDestroy {
     laboratoryId: string;
     userId: string;
   }): Promise<void> {
+    if (!this.whatsappEnabled) {
+      throw new Error('واتساب معطّل على هذا الخادم (WHATSAPP_ENABLED).');
+    }
     if (this._status !== 'CONNECTED' || !this.client) {
       throw new Error('واتساب غير متصل. يرجى مسح رمز QR أولاً.');
     }

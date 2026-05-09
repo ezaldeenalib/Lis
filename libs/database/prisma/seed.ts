@@ -1,5 +1,9 @@
 import { PrismaClient } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
+import {
+  seedLabServiceCatalogForLaboratory,
+  DEFAULT_LAB_SERVICE_CATALOG_COUNT,
+} from './catalog/seed-lab-service-catalog';
 
 const prisma = new PrismaClient();
 
@@ -169,30 +173,11 @@ async function main() {
   }
   console.log('✅ Created demo users (all passwords: admin123)');
 
-  // 6. Create demo lab services
-  const labServices = [
-    { code: 'CBC', name: 'Complete Blood Count', department: 'Hematology', price: 25, unit: '', normalRange: '' },
-    { code: 'GLU', name: 'Glucose (Fasting)', department: 'Chemistry', price: 15, unit: 'mg/dL', normalRange: '70-100' },
-    { code: 'HBA1C', name: 'Hemoglobin A1c', department: 'Chemistry', price: 30, unit: '%', normalRange: '4.0-5.6' },
-    { code: 'CHOL', name: 'Total Cholesterol', department: 'Chemistry', price: 20, unit: 'mg/dL', normalRange: '<200' },
-    { code: 'TG', name: 'Triglycerides', department: 'Chemistry', price: 20, unit: 'mg/dL', normalRange: '<150' },
-    { code: 'HDL', name: 'HDL Cholesterol', department: 'Chemistry', price: 20, unit: 'mg/dL', normalRange: '>40' },
-    { code: 'LDL', name: 'LDL Cholesterol', department: 'Chemistry', price: 20, unit: 'mg/dL', normalRange: '<100' },
-    { code: 'CREAT', name: 'Creatinine', department: 'Chemistry', price: 15, unit: 'mg/dL', normalRange: '0.7-1.3' },
-    { code: 'UREA', name: 'Blood Urea Nitrogen', department: 'Chemistry', price: 15, unit: 'mg/dL', normalRange: '7-20' },
-    { code: 'TSH', name: 'Thyroid Stimulating Hormone', department: 'Immunology', price: 35, unit: 'mIU/L', normalRange: '0.4-4.0' },
-    { code: 'UA', name: 'Urinalysis', department: 'Urinalysis', price: 10, unit: '', normalRange: '' },
-    { code: 'CRP', name: 'C-Reactive Protein', department: 'Immunology', price: 25, unit: 'mg/L', normalRange: '<3.0' },
-  ];
-
-  for (const svc of labServices) {
-    await prisma.labService.upsert({
-      where: { code_laboratoryId: { code: svc.code, laboratoryId: lab.id } },
-      update: {},
-      create: { ...svc, laboratoryId: lab.id },
-    });
-  }
-  console.log(`✅ Created ${labServices.length} lab services`);
+  // 6. Predefined lab analyses catalog (~150+ tests: hematology, chemistry, hormones, …)
+  const catalog = await seedLabServiceCatalogForLaboratory(prisma, lab.id);
+  console.log(
+    `✅ Lab services catalog: ${catalog.inserted} newly inserted (${DEFAULT_LAB_SERVICE_CATALOG_COUNT} rows in catalog definition)`,
+  );
 
   // 7. Create demo patients
   const patients = [

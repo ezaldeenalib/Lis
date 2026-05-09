@@ -2,8 +2,13 @@ node_modules
 .next
 dist
 .git
+.env
+.env.*
+!.env.example
 .env.local
 *.log
 coverage
 .nx
 tmp
+.wwebjs_auth
+.wwebjs_cache

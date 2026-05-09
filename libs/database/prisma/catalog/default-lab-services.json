@@ -1,0 +1,1396 @@
+[
+  {
+    "code": "CBC",
+    "name": "تعداد الدم الكامل CBC",
+    "department": "Hematology",
+    "price": 18,
+    "unit": "",
+    "normalRange": "—",
+    "description": "Full blood count summary"
+  },
+  {
+    "code": "BMP",
+    "name": "لوحة إيضائيات أساسية BMP",
+    "department": "Chemistry",
+    "price": 22,
+    "unit": "",
+    "normalRange": "—",
+    "description": "Basic metabolic panel"
+  },
+  {
+    "code": "CMP",
+    "name": "لوحة إيضائيات شاملة CMP",
+    "department": "Chemistry",
+    "price": 28,
+    "unit": "",
+    "normalRange": "—",
+    "description": "Comprehensive metabolic panel"
+  },
+  {
+    "code": "LFT",
+    "name": "وظائف الكبد — مجموعة",
+    "department": "Chemistry",
+    "price": 25,
+    "unit": "",
+    "normalRange": "—"
+  },
+  {
+    "code": "LIPID",
+    "name": "البروفايل الشحومي Lipid Panel",
+    "department": "Chemistry",
+    "price": 22,
+    "unit": "",
+    "normalRange": "—"
+  },
+  {
+    "code": "TFT",
+    "name": "وظائف الغدة الدرقية TFT",
+    "department": "Endocrine",
+    "price": 30,
+    "unit": "",
+    "normalRange": "—"
+  },
+  {
+    "code": "COAG_BASIC",
+    "name": "تجلط أساس — PT/APTT",
+    "department": "Coagulation",
+    "price": 20,
+    "unit": "",
+    "normalRange": "—"
+  },
+  {
+    "code": "WBC",
+    "name": "خلايا محببة وبيض CBC — WBC",
+    "department": "Hematology",
+    "price": 8,
+    "unit": "10³/µL",
+    "normalRange": "4–11",
+    "description": "White blood cells"
+  },
+  {
+    "code": "RBC",
+    "name": "كرات الدم الحمراء RBC",
+    "department": "Hematology",
+    "price": 8,
+    "unit": "10⁶/µL",
+    "normalRange": "4.5–5.9♂ / 4.1–5.1♀"
+  },
+  {
+    "code": "HGB",
+    "name": "الهيموجلوبين Hb",
+    "department": "Hematology",
+    "price": 8,
+    "unit": "g/dL",
+    "normalRange": "13–17♂ / 12–15♀"
+  },
+  {
+    "code": "HCT",
+    "name": "المكداس الدموي HCT",
+    "department": "Hematology",
+    "price": 8,
+    "unit": "%",
+    "normalRange": "39–54♂ / 35–46♀"
+  },
+  {
+    "code": "MCV",
+    "name": "حجم الكرية المتوسط MCV",
+    "department": "Hematology",
+    "price": 6,
+    "unit": "fL",
+    "normalRange": "80–100"
+  },
+  {
+    "code": "MCH",
+    "name": "متوسط هيموجلوبين الكريّة MCH",
+    "department": "Hematology",
+    "price": 6,
+    "unit": "pg",
+    "normalRange": "27–32"
+  },
+  {
+    "code": "MCHC",
+    "name": "تركيز الهيموجلوبين MCHC",
+    "department": "Hematology",
+    "price": 6,
+    "unit": "g/dL",
+    "normalRange": "32–37"
+  },
+  {
+    "code": "RDW_CV",
+    "name": "انتشار حجم الكرية RDW-CV",
+    "department": "Hematology",
+    "price": 6,
+    "unit": "%",
+    "normalRange": "11.5–14.5"
+  },
+  {
+    "code": "PLT",
+    "name": "صفائح PLT",
+    "department": "Hematology",
+    "price": 8,
+    "unit": "10³/µL",
+    "normalRange": "150–400"
+  },
+  {
+    "code": "MPV",
+    "name": "متوسط حجم الصفيحة MPV",
+    "department": "Hematology",
+    "price": 6,
+    "unit": "fL",
+    "normalRange": "7.5–11.5"
+  },
+  {
+    "code": "NEUT_ABS",
+    "name": "محببات مطلقة NEUT#",
+    "department": "Hematology",
+    "price": 6,
+    "unit": "10³/µL",
+    "normalRange": "2–7"
+  },
+  {
+    "code": "LYMPH_ABS",
+    "name": "لمفاويات مطلقة LYMPH#",
+    "department": "Hematology",
+    "price": 6,
+    "unit": "10³/µL",
+    "normalRange": "1–4"
+  },
+  {
+    "code": "MONO_ABS",
+    "name": "وحيدات مطلقة MONO#",
+    "department": "Hematology",
+    "price": 6,
+    "unit": "10³/µL",
+    "normalRange": "0.1–1.0"
+  },
+  {
+    "code": "EOS_ABS",
+    "name": "حمضات مطلقة EOS#",
+    "department": "Hematology",
+    "price": 6,
+    "unit": "10³/µL",
+    "normalRange": "0.02–0.5"
+  },
+  {
+    "code": "BASO_ABS",
+    "name": "قعدات مطلقة BASO#",
+    "department": "Hematology",
+    "price": 6,
+    "unit": "10³/µL",
+    "normalRange": "0–0.1"
+  },
+  {
+    "code": "NEUT_PCT",
+    "name": "نسبة محببات NEUT%",
+    "department": "Hematology",
+    "price": 6,
+    "unit": "%",
+    "normalRange": "40–74"
+  },
+  {
+    "code": "LYMPH_PCT",
+    "name": "نسبة لمفاويات LYMPH%",
+    "department": "Hematology",
+    "price": 6,
+    "unit": "%",
+    "normalRange": "19–48"
+  },
+  {
+    "code": "MONO_PCT",
+    "name": "نسبة وحيدات MONO%",
+    "department": "Hematology",
+    "price": 6,
+    "unit": "%",
+    "normalRange": "3–13"
+  },
+  {
+    "code": "EOS_PCT",
+    "name": "نسبة حمضات EOS%",
+    "department": "Hematology",
+    "price": 6,
+    "unit": "%",
+    "normalRange": "0–7"
+  },
+  {
+    "code": "BASO_PCT",
+    "name": "نسبة قعدات BASO%",
+    "department": "Hematology",
+    "price": 6,
+    "unit": "%",
+    "normalRange": "0–2"
+  },
+  {
+    "code": "RETIC",
+    "name": "الخلايا الشبكية Retic",
+    "department": "Hematology",
+    "price": 15,
+    "unit": "%",
+    "normalRange": "0.5–2.5"
+  },
+  {
+    "code": "ESR",
+    "name": "سرعة ترسيب ESR",
+    "department": "Hematology",
+    "price": 8,
+    "unit": "mm/h",
+    "normalRange": "<20♂ / <30♀"
+  },
+  {
+    "code": "CRP",
+    "name": "بروتين C التفاعلي CRP",
+    "department": "Hematology",
+    "price": 12,
+    "unit": "mg/L",
+    "normalRange": "<10"
+  },
+  {
+    "code": "CRP_HS",
+    "name": "CRP فائق الحساسية hs-CRP",
+    "department": "Hematology",
+    "price": 18,
+    "unit": "mg/L",
+    "normalRange": "<1.0"
+  },
+  {
+    "code": "FERR",
+    "name": "الفيريتين Ferritin",
+    "department": "Hematology",
+    "price": 18,
+    "unit": "ng/mL",
+    "normalRange": "20–250♂ / 10–120♀"
+  },
+  {
+    "code": "IRON_SER",
+    "name": "الحديد السيري Iron",
+    "department": "Hematology",
+    "price": 12,
+    "unit": "µg/dL",
+    "normalRange": "60–170♂ / 50–170♀"
+  },
+  {
+    "code": "TIBC",
+    "name": "سعة ربط الحديد TIBC",
+    "department": "Hematology",
+    "price": 12,
+    "unit": "µg/dL",
+    "normalRange": "250–450"
+  },
+  {
+    "code": "TRANS_SAT",
+    "name": "تشبع الترانسفيرين %",
+    "department": "Hematology",
+    "price": 10,
+    "unit": "%",
+    "normalRange": "20–50"
+  },
+  {
+    "code": "B12_SER",
+    "name": "فيتامين B₁₂ سيري",
+    "department": "Chemistry",
+    "price": 22,
+    "unit": "pg/mL",
+    "normalRange": "200–900"
+  },
+  {
+    "code": "FOLATE_SER",
+    "name": "حمض الفوليك سيري",
+    "department": "Chemistry",
+    "price": 22,
+    "unit": "ng/mL",
+    "normalRange": ">3.4"
+  },
+  {
+    "code": "PT",
+    "name": "زمن البروثرومبين PT",
+    "department": "Coagulation",
+    "price": 12,
+    "unit": "s",
+    "normalRange": "11–13.5"
+  },
+  {
+    "code": "INR",
+    "name": "INR",
+    "department": "Coagulation",
+    "price": 12,
+    "unit": "",
+    "normalRange": "0.9–1.2"
+  },
+  {
+    "code": "APTT",
+    "name": "زمن الثرومبوپلاستين APTT/aPTT",
+    "department": "Coagulation",
+    "price": 12,
+    "unit": "s",
+    "normalRange": "25–36"
+  },
+  {
+    "code": "DDIMER",
+    "name": "دي-دايمر D-Dimer",
+    "department": "Coagulation",
+    "price": 28,
+    "unit": "ng/mL FEU",
+    "normalRange": "<500"
+  },
+  {
+    "code": "FBG",
+    "name": "الفيبرينوجين",
+    "department": "Coagulation",
+    "price": 15,
+    "unit": "mg/dL",
+    "normalRange": "200–400"
+  },
+  {
+    "code": "GLU",
+    "name": "سكر صائم Glucose FAST",
+    "department": "Chemistry",
+    "price": 8,
+    "unit": "mg/dL",
+    "normalRange": "70–100"
+  },
+  {
+    "code": "GLU_RND",
+    "name": "سكر عشوائي",
+    "department": "Chemistry",
+    "price": 8,
+    "unit": "mg/dL",
+    "normalRange": "<200"
+  },
+  {
+    "code": "GLU_PP",
+    "name": "سكر بعد الطعام — ساعتين",
+    "department": "Chemistry",
+    "price": 8,
+    "unit": "mg/dL",
+    "normalRange": "<140"
+  },
+  {
+    "code": "HBA1C",
+    "name": "السكر التراكمي HbA1c",
+    "department": "Chemistry",
+    "price": 22,
+    "unit": "%",
+    "normalRange": "4–5.6",
+    "description": "NGSP"
+  },
+  {
+    "code": "HBA1C_MMOL",
+    "name": "HbA1c mmol/mol IFCC",
+    "department": "Chemistry",
+    "price": 22,
+    "unit": "mmol/mol",
+    "normalRange": "<42"
+  },
+  {
+    "code": "INSULIN",
+    "name": "الانسولين",
+    "department": "Endocrine",
+    "price": 28,
+    "unit": "µIU/mL",
+    "normalRange": "2.6–25"
+  },
+  {
+    "code": "C_PEPTIDE",
+    "name": "ببتيد سي C-Peptide",
+    "department": "Endocrine",
+    "price": 35,
+    "unit": "ng/mL",
+    "normalRange": "0.81–3.85"
+  },
+  {
+    "code": "CREAT",
+    "name": "كرياتينين سيري",
+    "department": "Chemistry",
+    "price": 8,
+    "unit": "mg/dL",
+    "normalRange": "0.7–1.3♂ / 0.6–1.1♀"
+  },
+  {
+    "code": "EGFR_CKD_EPI",
+    "name": "تقدير ترشيح كبيبي eGFR",
+    "department": "Chemistry",
+    "price": 6,
+    "unit": "mL/min",
+    "normalRange": ">60",
+    "description": "Calculated from creatinine"
+  },
+  {
+    "code": "BUN",
+    "name": "اليوريا أو BUN",
+    "department": "Chemistry",
+    "price": 8,
+    "unit": "mg/dL",
+    "normalRange": "8–26"
+  },
+  {
+    "code": "UREA",
+    "name": "اليوريا سيرية Urea",
+    "department": "Chemistry",
+    "price": 8,
+    "unit": "mg/dL",
+    "normalRange": "15–39"
+  },
+  {
+    "code": "UA_SER",
+    "name": "حمض البوليك Uric acid",
+    "department": "Chemistry",
+    "price": 8,
+    "unit": "mg/dL",
+    "normalRange": "3.4–7.0♂ / 2.4–6.0♀"
+  },
+  {
+    "code": "CYSC",
+    "name": "سيستاتين C",
+    "department": "Chemistry",
+    "price": 28,
+    "unit": "mg/L",
+    "normalRange": "0.57–1.12"
+  },
+  {
+    "code": "URINE_MIC_ALB",
+    "name": "ألبومين بول بولي جزئي",
+    "department": "Urinalysis",
+    "price": 18,
+    "unit": "mg/L",
+    "normalRange": "<30"
+  },
+  {
+    "code": "UPCR",
+    "name": "ألبومين/كرياتينين بول",
+    "department": "Urinalysis",
+    "price": 25,
+    "unit": "mg/g",
+    "normalRange": "<30"
+  },
+  {
+    "code": "NA",
+    "name": "صوديوم Na⁺",
+    "department": "Chemistry",
+    "price": 8,
+    "unit": "mEq/L",
+    "normalRange": "135–146"
+  },
+  {
+    "code": "K",
+    "name": "بوتاسيوم K⁺",
+    "department": "Chemistry",
+    "price": 8,
+    "unit": "mEq/L",
+    "normalRange": "3.5–5.2"
+  },
+  {
+    "code": "CL",
+    "name": "كلور Cl⁻",
+    "department": "Chemistry",
+    "price": 8,
+    "unit": "mEq/L",
+    "normalRange": "98–109"
+  },
+  {
+    "code": "CO2_HCO3",
+    "name": "بيكربونات/CO₂",
+    "department": "Chemistry",
+    "price": 8,
+    "unit": "mEq/L",
+    "normalRange": "21–31"
+  },
+  {
+    "code": "CA_TOTAL",
+    "name": "كلسيوم إجمالي",
+    "department": "Chemistry",
+    "price": 10,
+    "unit": "mg/dL",
+    "normalRange": "8.4–10.5"
+  },
+  {
+    "code": "CA_ION",
+    "name": "كلسيوم أيوني",
+    "department": "Chemistry",
+    "price": 15,
+    "unit": "mmol/L",
+    "normalRange": "1.03–1.23"
+  },
+  {
+    "code": "MG",
+    "name": "مغنسيوم",
+    "department": "Chemistry",
+    "price": 10,
+    "unit": "mg/dL",
+    "normalRange": "1.6–2.6"
+  },
+  {
+    "code": "PHOS_S",
+    "name": "فوسفات سيري",
+    "department": "Chemistry",
+    "price": 10,
+    "unit": "mg/dL",
+    "normalRange": "2.5–4.5",
+    "description": "Adult serum"
+  },
+  {
+    "code": "OSM_SER",
+    "name": "الضغط الأسموزي مصل",
+    "department": "Chemistry",
+    "price": 15,
+    "unit": "mOsm/kg",
+    "normalRange": "273–297"
+  },
+  {
+    "code": "ALT",
+    "name": "ALT GPT",
+    "department": "Chemistry",
+    "price": 8,
+    "unit": "U/L",
+    "normalRange": "7–56♂ / 7–41♀"
+  },
+  {
+    "code": "AST",
+    "name": "AST GOT",
+    "department": "Chemistry",
+    "price": 8,
+    "unit": "U/L",
+    "normalRange": "10–42"
+  },
+  {
+    "code": "ALP",
+    "name": "فوسفاتاز قلوي ALP",
+    "department": "Chemistry",
+    "price": 8,
+    "unit": "U/L",
+    "normalRange": "46–126♂ / /35–105♀"
+  },
+  {
+    "code": "GGT",
+    "name": "جاماغلوتاميل GGT",
+    "department": "Chemistry",
+    "price": 10,
+    "unit": "U/L",
+    "normalRange": "9–51♂ / /8–41♀"
+  },
+  {
+    "code": "TBIL",
+    "name": "بليروبين كلي",
+    "department": "Chemistry",
+    "price": 8,
+    "unit": "mg/dL",
+    "normalRange": "0–1.3"
+  },
+  {
+    "code": "DBIL",
+    "name": "بليروبين مباشر",
+    "department": "Chemistry",
+    "price": 8,
+    "unit": "mg/dL",
+    "normalRange": "0–0.3"
+  },
+  {
+    "code": "IBIL",
+    "name": "بليروبين غير مباشر",
+    "department": "Chemistry",
+    "price": 6,
+    "unit": "mg/dL",
+    "normalRange": ""
+  },
+  {
+    "code": "ALB_SER",
+    "name": "ألبومين",
+    "department": "Chemistry",
+    "price": 8,
+    "unit": "g/dL",
+    "normalRange": "3.5–5.2"
+  },
+  {
+    "code": "TP_SER",
+    "name": "بروتين كلي",
+    "department": "Chemistry",
+    "price": 8,
+    "unit": "g/dL",
+    "normalRange": "6.3–8.5"
+  },
+  {
+    "code": "CHOL",
+    "name": "كوليسترول كلي TC",
+    "department": "Chemistry",
+    "price": 8,
+    "unit": "mg/dL",
+    "normalRange": "<200",
+    "description": "Desirable adult"
+  },
+  {
+    "code": "TG",
+    "name": "شحوم ثلاثية TG",
+    "department": "Chemistry",
+    "price": 8,
+    "unit": "mg/dL",
+    "normalRange": "<150"
+  },
+  {
+    "code": "HDL",
+    "name": "كوليسترول HDL",
+    "department": "Chemistry",
+    "price": 8,
+    "unit": "mg/dL",
+    "normalRange": ">40♂ / >45♀",
+    "description": "Good cholesterol"
+  },
+  {
+    "code": "LDL",
+    "name": "LDL مباشرة أو محسوب",
+    "department": "Chemistry",
+    "price": 10,
+    "unit": "mg/dL",
+    "normalRange": "<100 optimal"
+  },
+  {
+    "code": "VLDL",
+    "name": "VLDL محسوب",
+    "department": "Chemistry",
+    "price": 6,
+    "unit": "mg/dL",
+    "normalRange": "5–40"
+  },
+  {
+    "code": "APOA1",
+    "name": "ApoA-I",
+    "department": "Chemistry",
+    "price": 18,
+    "unit": "mg/dL",
+    "normalRange": "120–180♂"
+  },
+  {
+    "code": "APOB",
+    "name": "ApoB",
+    "department": "Chemistry",
+    "price": 18,
+    "unit": "mg/dL",
+    "normalRange": "60–130"
+  },
+  {
+    "code": "LP_A",
+    "name": "Lipoprotein(a)",
+    "department": "Chemistry",
+    "price": 38,
+    "unit": "mg/dL",
+    "normalRange": "<30",
+    "description": "Risk marker"
+  },
+  {
+    "code": "HOMOCYS",
+    "name": "هوموسيستيت Homocysteine",
+    "department": "Chemistry",
+    "price": 28,
+    "unit": "µmol/L",
+    "normalRange": "5–15"
+  },
+  {
+    "code": "AMYL",
+    "name": "أميلاز",
+    "department": "Chemistry",
+    "price": 10,
+    "unit": "U/L",
+    "normalRange": "30–118"
+  },
+  {
+    "code": "LIPASE",
+    "name": "ليباز لعابي نوعى",
+    "department": "Chemistry",
+    "price": 12,
+    "unit": "U/L",
+    "normalRange": "8–180"
+  },
+  {
+    "code": "CK_TOTAL",
+    "name": "كيتين الكينيز CK",
+    "department": "Chemistry",
+    "price": 10,
+    "unit": "U/L",
+    "normalRange": "40–225♂ / /130♀"
+  },
+  {
+    "code": "CK_MB",
+    "name": "CK-MB نوعى",
+    "department": "Chemistry",
+    "price": 15,
+    "unit": "U/L",
+    "normalRange": "0–5"
+  },
+  {
+    "code": "LDH",
+    "name": "لاكتات دهيدروجانيز LDH",
+    "department": "Chemistry",
+    "price": 10,
+    "unit": "U/L",
+    "normalRange": "125–263"
+  },
+  {
+    "code": "TROP_I",
+    "name": "تروپونين نوعي I hs",
+    "department": "Chemistry",
+    "price": 38,
+    "unit": "ng/L",
+    "normalRange": "طبيعي جهاز-dependent"
+  },
+  {
+    "code": "TROP_T",
+    "name": "تروپونين نوعي T hs",
+    "department": "Chemistry",
+    "price": 38,
+    "unit": "ng/L",
+    "normalRange": "طبيعي جهاز-dependent"
+  },
+  {
+    "code": "BNP",
+    "name": "BNP قلبية",
+    "department": "Chemistry",
+    "price": 45,
+    "unit": "pg/mL",
+    "normalRange": "<100"
+  },
+  {
+    "code": "NT_PROBNP",
+    "name": "NT-proBNP",
+    "department": "Chemistry",
+    "price": 45,
+    "unit": "pg/mL",
+    "normalRange": "<300"
+  },
+  {
+    "code": "MYOGLOB",
+    "name": "الميوغلوبين",
+    "department": "Chemistry",
+    "price": 22,
+    "unit": "µg/L",
+    "normalRange": "28–71♂"
+  },
+  {
+    "code": "TSH",
+    "name": "هرمون تنشيط الدرقي TSH",
+    "department": "Endocrine",
+    "price": 15,
+    "unit": "µIU/mL",
+    "normalRange": "0.4–4.0"
+  },
+  {
+    "code": "FT4",
+    "name": "T4 حر FT4",
+    "department": "Endocrine",
+    "price": 18,
+    "unit": "ng/dL",
+    "normalRange": "0.9–1.7"
+  },
+  {
+    "code": "FT3",
+    "name": "T3 حر FT3",
+    "department": "Endocrine",
+    "price": 18,
+    "unit": "pg/mL",
+    "normalRange": "2.0–4.8"
+  },
+  {
+    "code": "TT4",
+    "name": "T4 كلي",
+    "department": "Endocrine",
+    "price": 14,
+    "unit": "µg/dL",
+    "normalRange": "6–11"
+  },
+  {
+    "code": "TT3",
+    "name": "T3 كلي",
+    "department": "Endocrine",
+    "price": 14,
+    "unit": "ng/dL",
+    "normalRange": "100–210"
+  },
+  {
+    "code": "ANTI_TPO",
+    "name": "أضداد الغدة Thyroid Peroxidase",
+    "department": "Endocrine",
+    "price": 35,
+    "unit": "IU/mL",
+    "normalRange": "<35"
+  },
+  {
+    "code": "ANTI_TG",
+    "name": "أضداد الثايرoglobulin",
+    "department": "Endocrine",
+    "price": 35,
+    "unit": "IU/mL",
+    "normalRange": "<40"
+  },
+  {
+    "code": "TRAB",
+    "name": "مستقبلات TSH (TRAb)",
+    "department": "Endocrine",
+    "price": 45,
+    "unit": "IU/L",
+    "normalRange": "<1.75"
+  },
+  {
+    "code": "FSH",
+    "name": "FSH",
+    "department": "Endocrine",
+    "price": 25,
+    "unit": "mIU/mL",
+    "normalRange": "آني على طور الدورة / العمر"
+  },
+  {
+    "code": "LH",
+    "name": "LH",
+    "department": "Endocrine",
+    "price": 25,
+    "unit": "mIU/mL",
+    "normalRange": ""
+  },
+  {
+    "code": "E2",
+    "name": "أستradiol E₂",
+    "department": "Endocrine",
+    "price": 25,
+    "unit": "pg/mL",
+    "normalRange": ""
+  },
+  {
+    "code": "PROGEST",
+    "name": "بروجستيرون",
+    "department": "Endocrine",
+    "price": 22,
+    "unit": "ng/mL",
+    "normalRange": ""
+  },
+  {
+    "code": "TESTO_TOT",
+    "name": "تستوستيرون كلي",
+    "department": "Endocrine",
+    "price": 22,
+    "unit": "ng/dL",
+    "normalRange": "250–1100♂"
+  },
+  {
+    "code": "TESTO_FREE",
+    "name": "تستوستيرون حر",
+    "department": "Endocrine",
+    "price": 28,
+    "unit": "pg/mL",
+    "normalRange": ""
+  },
+  {
+    "code": "PRL",
+    "name": "برولاكتين",
+    "department": "Endocrine",
+    "price": 22,
+    "unit": "ng/mL",
+    "normalRange": "<25♂ / <29♀"
+  },
+  {
+    "code": "HCG_BETA",
+    "name": "HCG مجموعي بحري",
+    "department": "Endocrine",
+    "price": 25,
+    "unit": "mIU/mL",
+    "normalRange": "<5 غير حامل",
+    "description": "Serum qualitative/quantitative"
+  },
+  {
+    "code": "AMH",
+    "name": "Anti-Müllerian AMH",
+    "department": "Endocrine",
+    "price": 45,
+    "unit": "ng/mL",
+    "normalRange": ""
+  },
+  {
+    "code": "CORT_AM",
+    "name": "كورتisol صباحي",
+    "department": "Endocrine",
+    "price": 28,
+    "unit": "µg/dL",
+    "normalRange": "5–25 صباح"
+  },
+  {
+    "code": "ACTH",
+    "name": "ACTH",
+    "department": "Endocrine",
+    "price": 35,
+    "unit": "pg/mL",
+    "normalRange": "7–64"
+  },
+  {
+    "code": "PTH",
+    "name": "هرمون جار الغدة الرابعة",
+    "department": "Endocrine",
+    "price": 38,
+    "unit": "pg/mL",
+    "normalRange": "15–65"
+  },
+  {
+    "code": "IGF1",
+    "name": "IGF-1 Somatomedin C",
+    "department": "Endocrine",
+    "price": 38,
+    "unit": "ng/mL",
+    "normalRange": "على العمر والجنس"
+  },
+  {
+    "code": "GROWTH_H",
+    "name": "هرمون النمو GH",
+    "department": "Endocrine",
+    "price": 32,
+    "unit": "ng/mL",
+    "normalRange": ""
+  },
+  {
+    "code": "DHEAS",
+    "name": "DHEA-S الكبريائي",
+    "department": "Endocrine",
+    "price": 25,
+    "unit": "µg/dL",
+    "normalRange": ""
+  },
+  {
+    "code": "ANDROSTEND",
+    "name": "أندروستونديون",
+    "department": "Endocrine",
+    "price": 25,
+    "unit": "ng/dL",
+    "normalRange": ""
+  },
+  {
+    "code": "VIT_D25",
+    "name": "فيتامين D ثلاثيني hydroxy",
+    "department": "Chemistry",
+    "price": 25,
+    "unit": "ng/mL",
+    "normalRange": ">30 افضل"
+  },
+  {
+    "code": "FOLATE_RED",
+    "name": "فوليك من دم حمر",
+    "department": "Chemistry",
+    "price": 18,
+    "unit": "ng/mL",
+    "normalRange": ">3.9"
+  },
+  {
+    "code": "PSA_TOT",
+    "name": "PSA كلي للبروستات",
+    "department": "Immunology",
+    "price": 30,
+    "unit": "ng/mL",
+    "normalRange": "<4"
+  },
+  {
+    "code": "PSA_FREE",
+    "name": "PSA حر مع نسبة",
+    "department": "Immunology",
+    "price": 35,
+    "unit": "ng/mL",
+    "normalRange": ""
+  },
+  {
+    "code": "CEA",
+    "name": "CEA",
+    "department": "Immunology",
+    "price": 28,
+    "unit": "ng/mL",
+    "normalRange": "<3♂ / <5♀"
+  },
+  {
+    "code": "AFP",
+    "name": "الفيتا بروتيين AFP",
+    "department": "Immunology",
+    "price": 28,
+    "unit": "ng/mL",
+    "normalRange": "<10 non-pregnant"
+  },
+  {
+    "code": "CA125",
+    "name": "CA125",
+    "department": "Immunology",
+    "price": 35,
+    "unit": "U/mL",
+    "normalRange": "<35",
+    "description": "Ovarian"
+  },
+  {
+    "code": "CA19_9",
+    "name": "CA 19-9",
+    "department": "Immunology",
+    "price": 35,
+    "unit": "U/mL",
+    "normalRange": "<37",
+    "description": "GI / pancreas marker"
+  },
+  {
+    "code": "CA15_3",
+    "name": "CA 15-3",
+    "department": "Immunology",
+    "price": 35,
+    "unit": "U/mL",
+    "normalRange": "<30"
+  },
+  {
+    "code": "CA72_4",
+    "name": "CA 72-4",
+    "department": "Immunology",
+    "price": 45,
+    "unit": "U/mL",
+    "normalRange": "<6.9"
+  },
+  {
+    "code": "SCC_AG",
+    "name": "SCCA",
+    "department": "Immunology",
+    "price": 40,
+    "unit": "ng/mL",
+    "normalRange": "<1.5"
+  },
+  {
+    "code": "B_HCG_TUMOR",
+    "name": "HCG بتاوي ورمي متابعة",
+    "department": "Immunology",
+    "price": 28,
+    "unit": "mIU/mL",
+    "normalRange": ""
+  },
+  {
+    "code": "RF",
+    "name": "عامل الروماتوي RF",
+    "department": "Immunology",
+    "price": 15,
+    "unit": "IU/mL",
+    "normalRange": "<14"
+  },
+  {
+    "code": "ANTI_CCP",
+    "name": "أضداد Citrullinated CCP",
+    "department": "Immunology",
+    "price": 35,
+    "unit": "U/mL",
+    "normalRange": "<20"
+  },
+  {
+    "code": "ANA_IFA",
+    "name": "أضاد نووية IFA تصوير مجهر",
+    "department": "Immunology",
+    "price": 45,
+    "unit": "نمط وتتر",
+    "normalRange": "سلبي"
+  },
+  {
+    "code": "ANA_TITER",
+    "name": "عتبة ANA",
+    "department": "Immunology",
+    "price": 15,
+    "unit": "",
+    "normalRange": "1:40–1:160 اعتبار"
+  },
+  {
+    "code": "ASO_Q",
+    "name": "ASO نوعياً أو عتبي",
+    "department": "Immunology",
+    "price": 12,
+    "unit": "IU/mL",
+    "normalRange": "<200 Todd"
+  },
+  {
+    "code": "IGE_TOTAL",
+    "name": "IgE كلي",
+    "department": "Immunology",
+    "price": 18,
+    "unit": "IU/mL",
+    "normalRange": "<100"
+  },
+  {
+    "code": "IGG_SER",
+    "name": "IgG",
+    "department": "Immunology",
+    "price": 20,
+    "unit": "mg/dL",
+    "normalRange": "700–1600"
+  },
+  {
+    "code": "IGM_SER",
+    "name": "IgM",
+    "department": "Immunology",
+    "price": 20,
+    "unit": "mg/dL",
+    "normalRange": "40–230"
+  },
+  {
+    "code": "IGA_SER",
+    "name": "IgA",
+    "department": "Immunology",
+    "price": 20,
+    "unit": "mg/dL",
+    "normalRange": "70–400"
+  },
+  {
+    "code": "COMP_C3",
+    "name": "متمم C3",
+    "department": "Immunology",
+    "price": 18,
+    "unit": "mg/dL",
+    "normalRange": "90–180"
+  },
+  {
+    "code": "COMP_C4",
+    "name": "متمم C4",
+    "department": "Immunology",
+    "price": 18,
+    "unit": "mg/dL",
+    "normalRange": "10–40"
+  },
+  {
+    "code": "HBSAG",
+    "name": "مستضد فيروس الكبد B surface",
+    "department": "Serology",
+    "price": 15,
+    "unit": "",
+    "normalRange": "سلبي"
+  },
+  {
+    "code": "ANTI_HBS",
+    "name": "ضد مستضد B surface",
+    "department": "Serology",
+    "price": 15,
+    "unit": "mIU/mL",
+    "normalRange": ">10 حامي مقترَح"
+  },
+  {
+    "code": "ANTI_HCV",
+    "name": "أضاد فيروس C",
+    "department": "Serology",
+    "price": 18,
+    "unit": "",
+    "normalRange": "سلبي",
+    "description": "Third gen"
+  },
+  {
+    "code": "HIV_Ab_Ag_COMBO",
+    "name": "HIV أج/ضد مجموعة رابعاً",
+    "department": "Serology",
+    "price": 25,
+    "unit": "",
+    "normalRange": "سلبي"
+  },
+  {
+    "code": "RPR_QUAL",
+    "name": "RPR لولز فحص تأقّي لزق",
+    "department": "Serology",
+    "price": 12,
+    "unit": "",
+    "normalRange": "Non-reactive",
+    "description": "Syphilis screen"
+  },
+  {
+    "code": "TPPA",
+    "name": "TPPA لفيلس",
+    "department": "Serology",
+    "price": 15,
+    "unit": "",
+    "normalRange": "سلبي"
+  },
+  {
+    "code": "ANTI_HIV_WB",
+    "name": "HIV تأكيد Western blot أو NAAT",
+    "department": "Serology",
+    "price": 45,
+    "unit": "",
+    "normalRange": "",
+    "description": "Referral assay"
+  },
+  {
+    "code": "CMV_IGM",
+    "name": "فيروس نطاقي بشري CMV — IgM",
+    "department": "Serology",
+    "price": 35,
+    "unit": "",
+    "normalRange": ""
+  },
+  {
+    "code": "CMV_IGG",
+    "name": "CMV IgG",
+    "department": "Serology",
+    "price": 35,
+    "unit": "",
+    "normalRange": ""
+  },
+  {
+    "code": "RUBELLA_IGG",
+    "name": "حصبة ألمانيه IgG",
+    "department": "Serology",
+    "price": 25,
+    "unit": "IU/mL",
+    "normalRange": ""
+  },
+  {
+    "code": "TOXO_IGG",
+    "name": "توكسوفلازما IgG",
+    "department": "Serology",
+    "price": 28,
+    "unit": "IU/mL",
+    "normalRange": ""
+  },
+  {
+    "code": "TOXO_IGM",
+    "name": "توكسوفلازما IgM",
+    "department": "Serology",
+    "price": 28,
+    "unit": "",
+    "normalRange": ""
+  },
+  {
+    "code": "ABO_RH",
+    "name": "فئة الدم وفاعل ريسوس",
+    "department": "Immunohematology",
+    "price": 12,
+    "unit": "",
+    "normalRange": ""
+  },
+  {
+    "code": "CROSSMATCH",
+    "name": "مطابقه crossmatch قبل نقل نضح",
+    "department": "Immunohematology",
+    "price": 55,
+    "unit": "",
+    "normalRange": "متوافق"
+  },
+  {
+    "code": "ANT_BODY_SCR",
+    "name": "فريز أضاده غير منتظمه",
+    "department": "Immunohematology",
+    "price": 65,
+    "unit": "",
+    "normalRange": "سلبي"
+  },
+  {
+    "code": "UA",
+    "name": "تحاليل بول روتينة — Urinalysis",
+    "department": "Urinalysis",
+    "price": 8,
+    "unit": "",
+    "normalRange": ""
+  },
+  {
+    "code": "UA_MICRO",
+    "name": "بول جزئ مجهـر ومزرعة مختوم",
+    "department": "Urinalysis",
+    "price": 15,
+    "unit": "",
+    "normalRange": ""
+  },
+  {
+    "code": "U_CULT_SENS",
+    "name": "مزارع بول وحسّاسيه",
+    "department": "Microbiology",
+    "price": 25,
+    "unit": "",
+    "normalRange": "لا نمو مقبول محلياً"
+  },
+  {
+    "code": "FECAL_OC",
+    "name": "دم جزئ مخفي براز FOBT",
+    "department": "Microbiology",
+    "price": 12,
+    "unit": "",
+    "normalRange": "سلبي"
+  },
+  {
+    "code": "H_PYL_AG_STOOL",
+    "name": "H.pylori أضدان براز أو أنتيجين برازى",
+    "department": "Microbiology",
+    "price": 25,
+    "unit": "",
+    "normalRange": "سلبي"
+  },
+  {
+    "code": "OVA_PARASITES",
+    "name": "طفيليات وفيروسيت براز",
+    "department": "Microbiology",
+    "price": 14,
+    "unit": "",
+    "normalRange": ""
+  },
+  {
+    "code": "STOOL_CULT",
+    "name": "مزرعة سلمونلا شجة برازى",
+    "department": "Microbiology",
+    "price": 22,
+    "unit": "",
+    "normalRange": ""
+  },
+  {
+    "code": "STOOL_CDIF",
+    "name": "Clostridioides difficile toxin/PCR برازى",
+    "department": "Microbiology",
+    "price": 45,
+    "unit": "",
+    "normalRange": "سلبي"
+  },
+  {
+    "code": "AMMONIA_B",
+    "name": "أمونيا دم الشريان",
+    "department": "Chemistry",
+    "price": 25,
+    "unit": "µmol/L",
+    "normalRange": "11–35"
+  },
+  {
+    "code": "LACTATE_B",
+    "name": "لاكتيك دم",
+    "department": "Chemistry",
+    "price": 22,
+    "unit": "mmol/L",
+    "normalRange": "0.5–2.2 venous",
+    "description": "Arterial different"
+  },
+  {
+    "code": "ALCOH_ETG",
+    "name": "كول إيثانول دم أو نفس",
+    "department": "Toxicology",
+    "price": 18,
+    "unit": "mg/dL",
+    "normalRange": "0 تعاطي لا"
+  },
+  {
+    "code": "DRUG_SCR_UR",
+    "name": "فـحـص مخدرات بول سريع مجموعة نموذج",
+    "department": "Toxicology",
+    "price": 65,
+    "unit": "",
+    "normalRange": "سلبي"
+  },
+  {
+    "code": "CSF_CELL",
+    "name": "تعداد ومظهر وسائل نخاعي",
+    "department": "Hematology",
+    "price": 30,
+    "unit": "",
+    "normalRange": ""
+  },
+  {
+    "code": "CSF_PROT",
+    "name": "بروتئين سائل نخاعى",
+    "department": "Chemistry",
+    "price": 12,
+    "unit": "mg/dL",
+    "normalRange": "15–45 adult"
+  },
+  {
+    "code": "CSF_GLUC",
+    "name": "سكر بالسائل نخاعى",
+    "department": "Chemistry",
+    "price": 10,
+    "unit": "mg/dL",
+    "normalRange": "40–75 (مقارنة سرم)",
+    "description": "vs serum glucose"
+  },
+  {
+    "code": "PLE_PROT",
+    "name": "بروتين صدرى",
+    "department": "Chemistry",
+    "price": 12,
+    "unit": "g/dL",
+    "normalRange": ""
+  }
+]

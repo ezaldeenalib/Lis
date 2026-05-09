@@ -8,11 +8,9 @@
 const fs = require('fs');
 const path = require('path');
 const { spawnSync } = require('child_process');
+const { ROOT, SCHEMA, MIGRATIONS_DIR } = require('./prisma-paths.cjs');
 
-const ROOT = path.join(__dirname, '..');
 const ENV_PATH = path.join(ROOT, '.env');
-const SCHEMA = path.join(ROOT, 'libs/database/prisma/schema.prisma');
-const MIGRATIONS_DIR = path.join(ROOT, 'libs/database/prisma/migrations');
 
 function loadDotEnv() {
   if (!fs.existsSync(ENV_PATH)) return;
@@ -114,11 +112,11 @@ function cmdGuardReset() {
     process.exit(1);
   }
   console.log('Confirmation OK. Running prisma migrate reset (--force)...\n');
-  const r = spawnSync(
-    'npx',
-    ['prisma', 'migrate', 'reset', '--force', '--schema', SCHEMA],
-    { stdio: 'inherit', cwd: ROOT, shell: true },
-  );
+  const runner = path.join(ROOT, 'scripts', 'run-prisma.cjs');
+  const r = spawnSync(process.execPath, [runner, 'migrate', 'reset', '--force'], {
+    stdio: 'inherit',
+    cwd: ROOT,
+  });
   process.exit(r.status ?? 1);
 }
 
@@ -128,11 +126,11 @@ function cmdGuardDeploy() {
   if (!prod.block && databaseUrlLooksRemote().suspicious) {
     console.log('INFO: deploying to non-local DATABASE_URL.');
   }
-  const r = spawnSync(
-    'npx',
-    ['prisma', 'migrate', 'deploy', '--schema', SCHEMA],
-    { stdio: 'inherit', cwd: ROOT, shell: true },
-  );
+  const runner = path.join(ROOT, 'scripts', 'run-prisma.cjs');
+  const r = spawnSync(process.execPath, [runner, 'migrate', 'deploy'], {
+    stdio: 'inherit',
+    cwd: ROOT,
+  });
   process.exit(r.status ?? 1);
 }
 
@@ -142,10 +140,11 @@ function cmdDiff() {
   if (prod.block) {
     console.warn('WARNING:', prod.reason, '— still printing diff for review (read-only).\n');
   }
+  const runner = path.join(ROOT, 'scripts', 'run-prisma.cjs');
   const r = spawnSync(
-    'npx',
+    process.execPath,
     [
-      'prisma',
+      runner,
       'migrate',
       'diff',
       '--from-migrations',
@@ -154,7 +153,7 @@ function cmdDiff() {
       SCHEMA,
       '--script',
     ],
-    { encoding: 'utf8', cwd: ROOT, shell: true },
+    { encoding: 'utf8', cwd: ROOT },
   );
   if (r.stdout) process.stdout.write(r.stdout);
   if (r.stderr) process.stderr.write(r.stderr);
@@ -174,11 +173,11 @@ function cmdMigrateNew() {
     console.warn('NOTE:', prod.reason);
     console.warn('Creating a new migration is correct for production; ensure schema changes are backward-compatible.\n');
   }
-  const r = spawnSync(
-    'npx',
-    ['prisma', 'migrate', 'dev', '--name', name, '--schema', SCHEMA],
-    { stdio: 'inherit', cwd: ROOT, shell: true },
-  );
+  const runner = path.join(ROOT, 'scripts', 'run-prisma.cjs');
+  const r = spawnSync(process.execPath, [runner, 'migrate', 'dev', '--name', name], {
+    stdio: 'inherit',
+    cwd: ROOT,
+  });
   process.exit(r.status ?? 1);
 }
 

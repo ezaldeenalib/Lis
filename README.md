@@ -74,7 +74,7 @@ npm run db:seed
 | Mode | When to use | Workflow |
 |------|-------------|----------|
 | **Development (fast)** | Local or disposable DB only; initial migration not yet shared | Run `npm run db:migrate:diff`, append new SQL under `-- DEV APPENDED CHANGES` in `migrations/20260221221429_initial_schema/migration.sql`, then `PRISMA_RESET_CONFIRM=1 npm run db:migrate:reset`. Run `npm run db:migrate:guard-dev-append` first — it **blocks** if `NODE_ENV=production` or `DATABASE_ENV` is `staging`/`production`. |
-| **Production (safe)** | Shared, staging, or production databases | **Do not** edit applied migrations. Run `npm run db:migrate:new -- <descriptive_name>` (creates a new migration folder). Deploy with `npm run db:migrate:deploy` (same as `migrate deploy` + context). |
+| **Production (safe)** | Shared, staging, or production databases | **Do not** edit applied migrations. Run `npm run db:migrate:new -- <descriptive_name>` (creates a new migration folder). Deploy with `npm run db:deploy` or `npm run db:migrate:deploy` (guarded script with the same schema path as local). |
 
 **Safety**
 
@@ -83,14 +83,26 @@ npm run db:seed
 
 **Commands**
 
+The schema path is `libs/database/prisma/schema.prisma`. Use `npm run prisma -- <args>` (or `node scripts/run-prisma.cjs …`) so you never need `--schema` manually — this matches CI and Docker.
+
 ```bash
+npm run db:generate             # prisma generate
+npm run db:migrate              # prisma migrate dev (local)
+npm run db:deploy               # prisma migrate deploy (staging/prod)
+npm run db:studio               # Prisma Studio
+npm run db:reset                # destructive reset (guarded; see above)
+npm run db:validate             # validate schema
+
 npm run db:migrate:status              # show NODE_ENV / DATABASE_ENV / dev-append allowed
 npm run db:migrate:guard-dev-append  # exit 1 if appending to old SQL is unsafe
 npm run db:migrate:diff              # SQL diff from migrations → current schema
 npm run db:migrate:new -- add_index  # new migration (production-safe)
-npm run db:migrate:deploy            # prisma migrate deploy
+npm run db:migrate:deploy            # same as guard-deploy (migrate deploy + banner)
 # PowerShell reset example:
 # $env:PRISMA_RESET_CONFIRM=1; npm run db:migrate:reset
+
+# Untrack WhatsApp session dirs if they were committed by mistake:
+# npm run git:untrack-cache
 ```
 
 ### 4. Start Development Servers

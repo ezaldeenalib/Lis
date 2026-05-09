@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { TenantPrismaService } from '../database/tenant-prisma.service';
+import { BarcodeService } from '../barcode/barcode.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { CurrentUserPayload } from '../auth/decorators/current-user.decorator';
 import { OrderPriority, OrderStatus, SampleType } from '@prisma/client';
@@ -9,7 +10,10 @@ import { Prisma } from '@prisma/client';
 export class OrdersService {
   private readonly logger = new Logger(OrdersService.name);
 
-  constructor(private prisma: TenantPrismaService) {}
+  constructor(
+    private readonly prisma: TenantPrismaService,
+    private readonly barcodeService: BarcodeService,
+  ) {}
 
   async list(
     query: {
@@ -101,7 +105,7 @@ export class OrdersService {
       });
 
       for (const sampleData of samplesToCreate) {
-        const barcode = await this.generateBarcode();
+        const barcode = await this.barcodeService.generate(labId);
         const sample = await this.prisma.sample.create({
           data: {
             barcode,
@@ -164,7 +168,7 @@ export class OrdersService {
     });
 
     for (const sampleData of samplesToCreate) {
-      const barcode = await this.generateBarcode();
+      const barcode = await this.barcodeService.generate(laboratoryId);
       const sample = await this.prisma.sample.create({
         data: { barcode, orderId: order.id, laboratoryId, sampleType: sampleData.sampleType as SampleType },
       });
@@ -309,24 +313,6 @@ export class OrdersService {
 
     const sequence = String(count + 1).padStart(4, '0');
     return `${prefix}${sequence}`;
-  }
-
-  /** Generate a short, human-readable barcode: S-YYYYMMDD-NNN */
-  private async generateBarcode(): Promise<string> {
-    const today = new Date();
-    const dateStr =
-      `${today.getFullYear()}` +
-      `${String(today.getMonth() + 1).padStart(2, '0')}` +
-      `${String(today.getDate()).padStart(2, '0')}`;
-
-    const startOfDay = new Date(today);
-    startOfDay.setHours(0, 0, 0, 0);
-
-    const count = await this.prisma.sample.count({
-      where: { createdAt: { gte: startOfDay } },
-    });
-
-    return `S-${dateStr}-${String(count + 1).padStart(3, '0')}`;
   }
 
   async findById(id: string, viewer?: CurrentUserPayload) {

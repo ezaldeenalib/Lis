@@ -17,8 +17,11 @@ ENV NODE_ENV=production
 
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=builder /app/dist/apps/api ./dist
-COPY --from=deps /app/libs/database/prisma ./prisma
+# Keep the same path as the monorepo — `prisma migrate deploy` and Prisma Client match CI/local.
+COPY --from=deps /app/libs/database/prisma ./libs/database/prisma
+COPY --from=builder /app/scripts/docker-api-entrypoint.sh /usr/local/bin/docker-api-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-api-entrypoint.sh
 
 EXPOSE 4000
 
-CMD ["node", "dist/apps/api/src/main.js"]
+ENTRYPOINT ["/usr/local/bin/docker-api-entrypoint.sh"]

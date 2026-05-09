@@ -50,20 +50,21 @@ model Laboratory {
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")
 
-  users           User[]
-  roles           Role[]
-  patients        Patient[]
-  orders          Order[]
-  samples         Sample[]
-  labServices     LabService[]
-  panels          Panel[]
-  analyzers       Analyzer[]
-  auditLogs       AuditLog[]
-  reportTemplates ReportTemplate[]
-  invoices        Invoice[]
+  users            User[]
+  roles            Role[]
+  patients         Patient[]
+  orders           Order[]
+  samples          Sample[]
+  labServices      LabService[]
+  panels           Panel[]
+  analyzers        Analyzer[]
+  auditLogs        AuditLog[]
+  reportTemplates  ReportTemplate[]
+  invoices         Invoice[]
   whatsAppSendLogs WhatsAppSendLog[]
-  deviceMappings  DeviceTestMapping[]
-  ingestionLogs   IngestionLog[]
+  deviceMappings   DeviceTestMapping[]
+  ingestionLogs    IngestionLog[]
+  barcodeCounters  BarcodeCounter[]
 
   @@map("laboratories")
 }
@@ -646,6 +647,33 @@ enum IngestionStatus {
   FAILED
   DUPLICATE
   SKIPPED
+}
+
+// ============================================================
+// BARCODE COUNTERS — atomic per-lab, per-year sequences
+//
+// Each row holds the last-issued sequence number for one lab × year.
+// Generation uses a single atomic SQL UPSERT (INSERT ... ON CONFLICT DO UPDATE
+// RETURNING current_value) — no locks needed, safe at any concurrency level.
+//
+// Barcode format: YY + XXXXXXXX  (10 digits, numeric-only)
+//   YY       = 2-digit year  (e.g. 26 for 2026)
+//   XXXXXXXX = 8-digit zero-padded sequence starting at 00000001
+//   Example  : 2600000001 … 2699999999
+// ============================================================
+
+model BarcodeCounter {
+  id           String   @id @default(uuid())
+  laboratoryId String   @map("laboratory_id")
+  year         Int
+  currentValue BigInt   @default(0) @map("current_value")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  laboratory Laboratory @relation(fields: [laboratoryId], references: [id], onDelete: Cascade)
+
+  @@unique([laboratoryId, year])
+  @@index([laboratoryId])
+  @@map("barcode_counters")
 }
 
 // ============================================================

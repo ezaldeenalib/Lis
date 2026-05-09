@@ -1,11 +1,51 @@
+# Dependencies
 node_modules/
+
+# Build / output
 dist/
+out/
+build/
 .next/
-.env
-.env.local
-*.log
-coverage/
+*.tsbuildinfo
+
+# Nx
 .nx/
+
+# Tests & coverage
+coverage/
+
+# Env & secrets (commit only .env.example)
+.env
+.env.*
+!.env.example
+
+# Logs & temp
+*.log
+logs/
 tmp/
-# WhatsApp session
+temp/
+.pnpm-debug.log*
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# WhatsApp Web.js (session keys — never commit)
 .wwebjs_auth/
+.wwebjs_cache/
+
+# Puppeteer / browser profile junk
+.local-chromium/
+
+# Vercel / misc
+.vercel/
+
+# Prisma (if custom output dirs are added later)
+**/prisma/*.db
+**/prisma/*.db-journal

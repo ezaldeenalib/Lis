@@ -1,8 +1,10 @@
 import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
+import { validateEnv } from './config/env.validation';
 import { DatabaseModule } from './database/database.module';
 import { AuthModule } from './auth/auth.module';
+import { BarcodeModule } from './barcode/barcode.module';
 import { PlatformModule } from './platform/platform.module';
 import { PatientsModule } from './patients/patients.module';
 import { OrdersModule } from './orders/orders.module';
@@ -20,13 +22,18 @@ import { RealtimeModule } from './realtime/realtime.module';
 import { InvoicesModule } from './invoices/invoices.module';
 import { DeviceMappingsModule } from './device-mappings/device-mappings.module';
 import { WhatsAppModule } from './whatsapp/whatsapp.module';
+import { HealthModule } from './health/health.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { TenantMiddleware } from './common/tenant.middleware';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
+    ConfigModule.forRoot({
+      isGlobal: true,
+      validate: validateEnv,
+    }),
     DatabaseModule,
+    BarcodeModule,
     AuthModule,
     PlatformModule,
     PatientsModule,
@@ -44,6 +51,7 @@ import { TenantMiddleware } from './common/tenant.middleware';
     RealtimeModule,
     InvoicesModule,
     DeviceMappingsModule,
+    HealthModule,
     WhatsAppModule,
   ],
   providers: [
