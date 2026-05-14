@@ -7,6 +7,7 @@ import {
   Query,
   Param,
   UseGuards,
+  ForbiddenException,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -17,8 +18,10 @@ import {
 } from '@nestjs/swagger';
 import { DeviceMappingsService } from './device-mappings.service';
 import { BulkMappingDto } from './dto/bulk-mapping.dto';
-import { RequirePermissions } from '../auth/decorators/permissions.decorator';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
+
+const PLATFORM_ONLY_MSG =
+  'إدارة ربط تحاليل الأجهزة محجوزة لمشرف المنصة. يمكنك عرض الخريطة الحالية فقط.';
 
 @ApiTags('device-mappings')
 @ApiBearerAuth()
@@ -27,31 +30,34 @@ import { PermissionsGuard } from '../auth/guards/permissions.guard';
 export class DeviceMappingsController {
   constructor(private service: DeviceMappingsService) {}
 
+  /** Lab users: list device IDs that have mappings for this lab (read-only). */
   @Get('devices')
-  @ApiOperation({ summary: 'List all device IDs registered in this lab' })
+  @ApiOperation({ summary: 'List device IDs with mappings for this lab (read-only)' })
   getDevices() {
     return this.service.getDevices();
   }
 
+  /** Lab users: view mappings for a device (read-only). */
   @Get()
-  @ApiOperation({ summary: 'Get mappings for a specific device' })
+  @ApiOperation({ summary: 'Get device→test mappings for this lab (read-only)' })
   @ApiQuery({ name: 'deviceId', required: true, example: 'XP-300' })
   getByDevice(@Query('deviceId') deviceId: string) {
     return this.service.getByDevice(deviceId);
   }
 
+  // ── Write operations below are PLATFORM-ONLY ─────────────────────────────
+  // Platform manages mappings via POST /platform/device-mappings/bulk.
+
   @Post('bulk')
-  @RequirePermissions('manage:analyzer')
-  @ApiOperation({ summary: 'Save (upsert) all mappings for a device' })
-  saveBulk(@Body() dto: BulkMappingDto) {
-    return this.service.saveBulk(dto);
+  @ApiOperation({ summary: '[PLATFORM ONLY] Save mappings — use /platform/device-mappings/bulk' })
+  saveBulk(@Body() _dto: BulkMappingDto) {
+    throw new ForbiddenException(PLATFORM_ONLY_MSG);
   }
 
   @Delete(':id')
-  @RequirePermissions('manage:analyzer')
-  @ApiOperation({ summary: 'Delete a single mapping entry' })
+  @ApiOperation({ summary: '[PLATFORM ONLY] Delete mapping — use /platform/device-mappings/:id' })
   @ApiParam({ name: 'id', description: 'Mapping ID' })
-  deleteOne(@Param('id') id: string) {
-    return this.service.deleteOne(id);
+  deleteOne(@Param('id') _id: string) {
+    throw new ForbiddenException(PLATFORM_ONLY_MSG);
   }
 }

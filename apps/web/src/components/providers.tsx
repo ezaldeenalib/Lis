@@ -4,10 +4,11 @@ import { QueryClient, QueryClientProvider, keepPreviousData } from '@tanstack/re
 import { ThemeProvider } from 'next-themes';
 import { useState } from 'react';
 import { Toaster } from '@/components/ui/toaster';
+import { registerQueryClient } from '@/lib/react-query-registry';
 
 export function Providers({ children }: { children: React.ReactNode }) {
-  const [queryClient] = useState(
-    () =>
+  const [queryClient] = useState(() => {
+    const client =
       new QueryClient({
         defaultOptions: {
           queries: {
@@ -21,8 +22,10 @@ export function Providers({ children }: { children: React.ReactNode }) {
             placeholderData: keepPreviousData,
           },
         },
-      }),
-  );
+      });
+    registerQueryClient(client);
+    return client;
+  });
 
   return (
     <QueryClientProvider client={queryClient}>

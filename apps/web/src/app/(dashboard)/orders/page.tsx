@@ -20,6 +20,11 @@ import {
 } from 'lucide-react';
 import { EmptyState } from '@/components/ui/empty-state';
 import { api } from '@/lib/api';
+import {
+  applyWhatsAppResultsTemplate,
+  DEFAULT_WHATSAPP_RESULTS_TEMPLATE,
+} from '@/lib/whatsapp-results-message';
+import { useAuthStore } from '@/stores/auth.store';
 import { useListViewStore } from '@/stores/list-view.store';
 import { usePermission } from '@/hooks/use-permission';
 import { useToast } from '@/hooks/use-toast';
@@ -295,6 +300,7 @@ function WhatsAppBrandIcon({ className }: { className?: string }) {
 
 export default function OrdersPage() {
   const router = useRouter();
+  const { user } = useAuthStore();
   const viewMode = useListViewStore((s) => s.viewMode);
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -371,6 +377,13 @@ export default function OrdersPage() {
     enabled: dialogOpen,
   });
 
+  const { data: waTemplateData } = useQuery({
+    queryKey: ['whatsapp-message-template'],
+    queryFn: () => api.get<{ template: string }>('/api/v1/whatsapp/message-template'),
+    enabled: canSendWhatsApp,
+    staleTime: 60_000,
+  });
+
   const allPatients = patientsData?.data ?? [];
   const services = servicesData?.data ?? [];
   const panels = panelsData?.data ?? [];
@@ -408,11 +421,16 @@ export default function OrdersPage() {
       patientMrn: order.patient.mrn,
     });
     setWaPhone(phone);
+    const labName = user?.laboratoryName?.trim() || 'المختبر';
+    const tmpl = waTemplateData?.template ?? DEFAULT_WHATSAPP_RESULTS_TEMPLATE;
     setWaMessage(
-      `مرحباً ${order.patient.firstName} ${order.patient.lastName},\n\n` +
-        `نتائج تحاليلك لطلب رقم ${order.orderNumber} جاهزة.\n` +
-        `يرجى مراجعة الملف المرفق لعرض النتائج.\n\n` +
-        `مع تحيات فريق المختبر`,
+      applyWhatsAppResultsTemplate(tmpl, {
+        firstName: order.patient.firstName,
+        lastName: order.patient.lastName,
+        orderNumber: order.orderNumber,
+        mrn: order.patient.mrn,
+        labName,
+      }),
     );
     setWaOpen(true);
   };

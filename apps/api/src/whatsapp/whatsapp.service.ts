@@ -1,11 +1,17 @@
-import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { WhatsAppSendStatus } from '@prisma/client';
 import { Client, LocalAuth, MessageMedia } from 'whatsapp-web.js';
 import * as qrcode from 'qrcode';
+import { Prisma } from '@prisma/client';
 import { TenantPrismaService } from '../database/tenant-prisma.service';
+import {
+  DEFAULT_WHATSAPP_RESULTS_TEMPLATE,
+  WHATSAPP_RESULTS_TEMPLATE_SETTINGS_KEY,
+  WHATSAPP_TEMPLATE_PLACEHOLDERS,
+} from './whatsapp-template.constants';
 
 export type WAStatus = 'DISCONNECTED' | 'CONNECTING' | 'CONNECTED' | 'DISABLED';
 
@@ -22,6 +28,8 @@ export class WhatsAppService implements OnModuleInit, OnModuleDestroy {
   private _status: WAStatus = 'DISCONNECTED';
   private _qrDataUrl: string | null = null;
   private _reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+  /** Kills a CONNECTING→stuck scenario: if no qr/ready/error within 90 s, treat as failed. */
+  private _connectTimeoutTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(
     private readonly prisma: TenantPrismaService,
@@ -63,6 +71,7 @@ export class WhatsAppService implements OnModuleInit, OnModuleDestroy {
 
   async onModuleDestroy() {
     this.clearReconnectTimer();
+    this.clearConnectTimeout();
     try { await this.client?.destroy(); } catch { /* ignore on shutdown */ }
   }
 
@@ -81,10 +90,139 @@ export class WhatsAppService implements OnModuleInit, OnModuleDestroy {
 
   // ── Client lifecycle ───────────────────────────────────────────────────────
 
+  /**
+   * Prefer a real Chrome/Edge binary on Windows/macOS — bundled Chromium often hangs/fails silently.
+   * Set `WHATSAPP_CHROME_EXECUTABLE` or `PUPPETEER_EXECUTABLE_PATH` if auto-detect misses.
+   */
+  private resolvePuppeteerExecutablePath(): string | undefined {
+    const tryConfigured = (
+      cfgKey: 'WHATSAPP_CHROME_EXECUTABLE' | 'PUPPETEER_EXECUTABLE_PATH',
+      envKey: string,
+    ): string | undefined => {
+      const raw = (
+        this.config.get<string>(cfgKey, '') ||
+        process.env[envKey] ||
+        ''
+      ).trim();
+      if (!raw) return undefined;
+      const candidates = path.isAbsolute(raw)
+        ? [raw]
+        : [path.resolve(process.cwd(), raw), raw];
+      for (const p of candidates) {
+        if (fs.existsSync(p)) return path.normalize(p);
+      }
+      this.logger.warn(`WhatsApp: ${cfgKey} path not found on disk (${raw}). Falling back.`);
+      return undefined;
+    };
+
+    return (
+      tryConfigured('WHATSAPP_CHROME_EXECUTABLE', 'WHATSAPP_CHROME_EXECUTABLE') ??
+      tryConfigured('PUPPETEER_EXECUTABLE_PATH', 'PUPPETEER_EXECUTABLE_PATH')
+    );
+
+    if (process.platform === 'win32') {
+      const fromLocal: string[] = [];
+      const rawLocalAppData = process.env.LOCALAPPDATA ?? '';
+      if (rawLocalAppData.length > 0) {
+        fromLocal.push(
+          path.join(rawLocalAppData, 'Google', 'Chrome', 'Application', 'chrome.exe'),
+          path.join(rawLocalAppData, 'Microsoft', 'Edge', 'Application', 'msedge.exe'),
+        );
+      }
+      const candidates = [
+        ...fromLocal,
+        'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+        'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
+        path.join(process.env['ProgramFiles'] ?? '', 'Google', 'Chrome', 'Application', 'chrome.exe'),
+        path.join(process.env['ProgramFiles(x86)'] ?? '', 'Google', 'Chrome', 'Application', 'chrome.exe'),
+        path.join(process.env['ProgramFiles'] ?? '', 'Microsoft', 'Edge', 'Application', 'msedge.exe'),
+      ];
+
+      for (const p of candidates) {
+        try {
+          if (fs.existsSync(p)) return path.normalize(p);
+        } catch {
+          /* ignore */
+        }
+      }
+    }
+
+    if (process.platform === 'darwin') {
+      const mac = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+      if (fs.existsSync(mac)) return mac;
+      const macEdge =
+        '/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge';
+      if (fs.existsSync(macEdge)) return macEdge;
+    }
+
+    return undefined;
+  }
+
+  /** Launch options forwarded to Puppeteer (`whatsapp-web.js`). */
+  private buildPuppeteerOptions() {
+    /** Linux/container flags only — avoid `--no-zygote` on Windows (known hangs). */
+    const linuxSandbox =
+      process.platform === 'linux'
+        ? ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
+        : ['--disable-dev-shm-usage'];
+
+    const exe = this.resolvePuppeteerExecutablePath();
+    const opts = {
+      // `new` headless behaves better with WhatsApp Web than legacy headless.
+      headless: 'new' as const,
+      args: [
+        ...linuxSandbox,
+        '--no-first-run',
+        '--disable-blink-features=AutomationControlled',
+        '--disable-extensions',
+        '--disable-gpu',
+      ],
+      ...(exe ? { executablePath: exe as string } : {}),
+    };
+
+    if (exe) {
+      this.logger.log(`WhatsApp: launching browser at ${exe}`);
+    } else if (process.platform === 'win32' || process.platform === 'darwin') {
+      this.logger.warn(
+        'WhatsApp: no Chrome/Edge binary found — using Puppeteer Chromium. Install Chrome or set WHATSAPP_CHROME_EXECUTABLE.',
+      );
+    }
+
+    return opts;
+  }
+
+  private clearConnectTimeout() {
+    if (this._connectTimeoutTimer) {
+      clearTimeout(this._connectTimeoutTimer);
+      this._connectTimeoutTimer = null;
+    }
+  }
+
+  private startConnectTimeout(timeoutMs = 120_000) {
+    this.clearConnectTimeout();
+    this._connectTimeoutTimer = setTimeout(() => {
+      if (this._status === 'CONNECTING') {
+        this.logger.error(
+          `WhatsApp stuck in CONNECTING for ${timeoutMs / 1000}s — forcing reconnect.`,
+        );
+        this.logger.warn(
+          'Tips: delete .wwebjs_auth/session if the profile is corrupted; on Windows ensure Google Chrome is installed or set WHATSAPP_CHROME_EXECUTABLE.',
+        );
+        this._status = 'DISCONNECTED';
+        this._qrDataUrl = null;
+        try { void this.client?.destroy(); } catch { /* ignore */ }
+        this.client = null;
+        this.scheduleReconnect();
+      }
+    }, timeoutMs);
+  }
+
   private startClient() {
     this.clearReconnectTimer();
+    this.clearConnectTimeout();
     this._status = 'CONNECTING';
     this._qrDataUrl = null;
+    this.logger.log('WhatsApp: starting client (Puppeteer/Chrome initializing)...');
 
     try {
       const sessionId = (
@@ -97,21 +235,17 @@ export class WhatsAppService implements OnModuleInit, OnModuleDestroy {
 
       this.client = new Client({
         authStrategy: new LocalAuth(localOpts),
-        puppeteer: {
-          headless: true,
-          args: [
-            '--no-sandbox',
-            '--disable-setuid-sandbox',
-            '--disable-dev-shm-usage',
-            '--disable-accelerated-2d-canvas',
-            '--no-first-run',
-            '--no-zygote',
-            '--disable-gpu',
-          ],
-        },
+        puppeteer: this.buildPuppeteerOptions(),
+      });
+
+      this.client.on('authenticated', () => {
+        // Extend watchdog: authenticated → ready/sync can legitimately take a while.
+        this.startConnectTimeout(120_000);
+        this.logger.log('WhatsApp: authenticated (waiting for sync / ready)');
       });
 
       this.client.on('qr', async (qr: string) => {
+        this.clearConnectTimeout(); // QR received — Chrome is alive
         try {
           this._qrDataUrl = await qrcode.toDataURL(qr);
           this._status = 'CONNECTING';
@@ -122,12 +256,14 @@ export class WhatsAppService implements OnModuleInit, OnModuleDestroy {
       });
 
       this.client.on('ready', () => {
+        this.clearConnectTimeout();
         this._status = 'CONNECTED';
         this._qrDataUrl = null;
         this.logger.log('WhatsApp client is ready and connected');
       });
 
       this.client.on('auth_failure', (msg: string) => {
+        this.clearConnectTimeout();
         this.logger.error(`WhatsApp authentication failure: ${msg}`);
         this._status = 'DISCONNECTED';
         this._qrDataUrl = null;
@@ -135,18 +271,24 @@ export class WhatsAppService implements OnModuleInit, OnModuleDestroy {
       });
 
       this.client.on('disconnected', (reason: string) => {
+        this.clearConnectTimeout();
         this.logger.warn(`WhatsApp disconnected: ${reason}`);
         this._status = 'DISCONNECTED';
         this._qrDataUrl = null;
         this.scheduleReconnect();
       });
 
+      // Start the 90-second connect watchdog
+      this.startConnectTimeout();
+
       this.client.initialize().catch((err: Error) => {
+        this.clearConnectTimeout();
         this.logger.error('WhatsApp initialize() threw:', err.message);
         this._status = 'DISCONNECTED';
         this.scheduleReconnect();
       });
     } catch (err) {
+      this.clearConnectTimeout();
       this.logger.error('Failed to create WhatsApp client', err);
       this._status = 'DISCONNECTED';
       this.scheduleReconnect();
@@ -166,6 +308,11 @@ export class WhatsAppService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
+  /**
+   * User-initiated logout: destroy session on disk so a fresh pairing is required.
+   * Must schedule `startClient()` afterwards — otherwise the client never restarts
+   * and `/status` stays DISCONNECTED with no QR (user cannot scan again).
+   */
   async disconnect() {
     if (!this.whatsappEnabled) {
       this.logger.warn('disconnect() ignored — WhatsApp is disabled on this instance.');
@@ -177,6 +324,8 @@ export class WhatsAppService implements OnModuleInit, OnModuleDestroy {
     this._status = 'DISCONNECTED';
     this._qrDataUrl = null;
     this.client = null;
+    // Restart the client so WhatsApp can emit a new QR for re-linking (same as auth_failure path).
+    this.scheduleReconnect(2_000);
   }
 
   // ── Phone normalisation ────────────────────────────────────────────────────
@@ -291,6 +440,84 @@ export class WhatsAppService implements OnModuleInit, OnModuleDestroy {
     } catch (err) {
       this.logger.error('Failed to write WhatsApp send log', err);
     }
+  }
+
+  // ── Lab-scoped message template (Laboratory.settings JSON) ─────────────────
+
+  private mergeLabSettings(
+    current: Prisma.JsonValue,
+    patch: Record<string, unknown>,
+  ): Prisma.InputJsonValue {
+    const obj =
+      typeof current === 'object' && current !== null && !Array.isArray(current)
+        ? { ...(current as Record<string, unknown>) }
+        : {};
+    return { ...obj, ...patch } as Prisma.InputJsonValue;
+  }
+
+  async getResultsMessageTemplate(laboratoryId: string) {
+    const lab = await this.prisma.laboratory.findUnique({
+      where: { id: laboratoryId },
+      select: { name: true, settings: true },
+    });
+    if (!lab) throw new NotFoundException('المختبر غير موجود');
+
+    const s =
+      typeof lab.settings === 'object' && lab.settings !== null && !Array.isArray(lab.settings)
+        ? (lab.settings as Record<string, unknown>)
+        : {};
+    const custom =
+      typeof s[WHATSAPP_RESULTS_TEMPLATE_SETTINGS_KEY] === 'string'
+        ? (s[WHATSAPP_RESULTS_TEMPLATE_SETTINGS_KEY] as string)
+        : null;
+    const trimmed = custom?.trim() ?? '';
+    const usingCustom = trimmed.length > 0;
+    const template = usingCustom ? trimmed : DEFAULT_WHATSAPP_RESULTS_TEMPLATE;
+
+    return {
+      template,
+      defaultTemplate: DEFAULT_WHATSAPP_RESULTS_TEMPLATE,
+      usingCustom,
+      labName: lab.name,
+      placeholders: WHATSAPP_TEMPLATE_PLACEHOLDERS,
+    };
+  }
+
+  async setResultsMessageTemplate(laboratoryId: string, template: string): Promise<void> {
+    const trimmed = template.trim();
+    const lab = await this.prisma.laboratory.findUnique({
+      where: { id: laboratoryId },
+      select: { settings: true },
+    });
+    if (!lab) throw new NotFoundException('المختبر غير موجود');
+
+    await this.prisma.laboratory.update({
+      where: { id: laboratoryId },
+      data: {
+        settings: this.mergeLabSettings(lab.settings, {
+          [WHATSAPP_RESULTS_TEMPLATE_SETTINGS_KEY]: trimmed,
+        }),
+      },
+    });
+  }
+
+  async clearResultsMessageTemplate(laboratoryId: string): Promise<void> {
+    const lab = await this.prisma.laboratory.findUnique({
+      where: { id: laboratoryId },
+      select: { settings: true },
+    });
+    if (!lab) throw new NotFoundException('المختبر غير موجود');
+
+    const s =
+      typeof lab.settings === 'object' && lab.settings !== null && !Array.isArray(lab.settings)
+        ? ({ ...(lab.settings as Record<string, unknown>) } as Record<string, unknown>)
+        : {};
+    delete s[WHATSAPP_RESULTS_TEMPLATE_SETTINGS_KEY];
+
+    await this.prisma.laboratory.update({
+      where: { id: laboratoryId },
+      data: { settings: s as Prisma.InputJsonValue },
+    });
   }
 
   async getLogs(laboratoryId: string, page = 1, limit = 50) {

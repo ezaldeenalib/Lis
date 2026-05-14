@@ -23,6 +23,7 @@ import { InvoicesModule } from './invoices/invoices.module';
 import { DeviceMappingsModule } from './device-mappings/device-mappings.module';
 import { WhatsAppModule } from './whatsapp/whatsapp.module';
 import { HealthModule } from './health/health.module';
+import { CatalogModule } from './catalog/catalog.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { TenantMiddleware } from './common/tenant.middleware';
 
@@ -53,6 +54,7 @@ import { TenantMiddleware } from './common/tenant.middleware';
     DeviceMappingsModule,
     HealthModule,
     WhatsAppModule,
+    CatalogModule,
   ],
   providers: [
     {

@@ -24,6 +24,7 @@ import {
   Receipt,
   Cable,
   MessageSquare,
+  BookOpen,
 } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth.store';
 import { useListViewStore } from '@/stores/list-view.store';
@@ -64,12 +65,18 @@ const ALL_NAV_SECTIONS: NavSection[] = [
     ],
   },
   {
+    label: 'الكتالوج الطبي',
+    items: [
+      { href: '/catalog', label: 'الكتالوج العالمي', icon: BookOpen, permission: 'read:dashboard' },
+    ],
+  },
+  {
     label: 'الإعداد',
     items: [
       { href: '/lab-services', label: 'الخدمات المخبرية', icon: TestTube, permission: 'manage:labService' },
       { href: '/panels', label: 'الباقات', icon: Layers, permission: 'manage:panel' },
-      { href: '/analyzers', label: 'أجهزة التحليل', icon: Cpu, permission: 'manage:analyzer' },
-      { href: '/device-mappings', label: 'ربط تحاليل الأجهزة', icon: Cable, permission: 'manage:analyzer' },
+      { href: '/analyzers', label: 'أجهزة التحليل', icon: Cpu, permission: 'read:dashboard' },
+      { href: '/device-mappings', label: 'ربط تحاليل الأجهزة', icon: Cable, permission: 'read:dashboard' },
       { href: '/whatsapp', label: 'واتساب', icon: MessageSquare, permission: 'send:whatsapp' },
       { href: '/users', label: 'المستخدمون', icon: UserCog, permission: 'manage:user' },
       { href: '/reports', label: 'التقارير', icon: BarChart3, permission: 'manage:report' },
@@ -129,8 +136,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   if (!mounted || !isAuthenticated) {
     return (
-      <div className="flex h-screen items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-3">
+      <div
+        className="flex h-screen items-center justify-center bg-background"
+        suppressHydrationWarning
+      >
+        <div className="flex flex-col items-center gap-3" suppressHydrationWarning>
           <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent" />
           <p className="text-sm text-muted-foreground">جارٍ التحميل...</p>
         </div>
@@ -139,18 +149,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex min-h-screen bg-background" suppressHydrationWarning>
       {/* Mobile overlay */}
       {sidebarOpen && (
         <div
           className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm lg:hidden"
           onClick={() => setSidebarOpen(false)}
           aria-hidden="true"
+          suppressHydrationWarning
         />
       )}
 
       {/* ====== SIDEBAR ====== */}
       <aside
+        suppressHydrationWarning
         className={cn(
           'fixed inset-y-0 right-0 z-50 flex w-[240px] flex-col border-s border-border bg-card shadow-dropdown',
           'transition-transform duration-200 lg:static lg:translate-x-0',
@@ -158,12 +170,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         )}
       >
         {/* Brand */}
-        <div className="flex h-[60px] items-center justify-between border-b border-border px-4">
+        <div
+          className="flex h-[60px] items-center justify-between border-b border-border px-4"
+          suppressHydrationWarning
+        >
           <Link href="/dashboard" className="flex items-center gap-2.5 font-bold text-foreground">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-teal shadow-sm">
+            <div
+              className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-teal shadow-sm"
+              suppressHydrationWarning
+            >
               <BrandIcon className="h-4 w-4 text-white" />
             </div>
-            <div className="leading-tight hidden lg:block">
+            <div className="leading-tight hidden lg:block" suppressHydrationWarning>
               <div className="text-sm font-extrabold">MedLab LIS</div>
               <div className="text-[10px] text-muted-foreground font-normal">نظام إدارة المختبر</div>
             </div>
@@ -231,9 +249,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </aside>
 
       {/* ====== MAIN ====== */}
-      <div className="flex flex-1 flex-col min-w-0">
+      <div className="flex flex-1 flex-col min-w-0" suppressHydrationWarning>
         {/* Topbar */}
-        <header className="sticky top-0 z-30 flex h-[60px] items-center gap-3 border-b border-border bg-card/95 backdrop-blur-sm px-4 lg:px-6">
+        <header
+          className="sticky top-0 z-30 flex h-[60px] items-center gap-3 border-b border-border bg-card/95 backdrop-blur-sm px-4 lg:px-6"
+          suppressHydrationWarning
+        >
           <Button
             variant="ghost"
             size="icon"
@@ -252,7 +273,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <div className="hidden flex-1 lg:block" />
 
           {/* Right actions */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2" suppressHydrationWarning>
             <ListViewToggle />
             <Button
               variant="ghost"
@@ -274,7 +295,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </header>
 
         {/* Content */}
-        <main className="flex-1 p-4 lg:p-6 animate-fade-in">
+        <main className="flex-1 p-4 lg:p-6 animate-fade-in" suppressHydrationWarning>
           {children}
         </main>
       </div>

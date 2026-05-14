@@ -2,6 +2,8 @@ import {
   Controller,
   Get,
   Post,
+  Put,
+  Delete,
   Body,
   Query,
   UseGuards,
@@ -18,6 +20,7 @@ import {
 import { WhatsAppService } from './whatsapp.service';
 import { ReportsService } from '../reports/reports.service';
 import { SendWhatsAppDto } from './dto/send-whatsapp.dto';
+import { UpdateWhatsAppMessageTemplateDto } from './dto/update-whatsapp-message-template.dto';
 import { CurrentUser, CurrentUserPayload } from '../auth/decorators/current-user.decorator';
 import { RequirePermissions } from '../auth/decorators/permissions.decorator';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
@@ -95,6 +98,49 @@ export class WhatsAppController {
   async disconnect() {
     await this.whatsAppService.disconnect();
     return { success: true, message: 'تم قطع الاتصال بواتساب' };
+  }
+
+  /**
+   * قالب رسالة نتائج التحاليل المخزَّن للمختبر (أو النص الافتراضي).
+   */
+  @Get('message-template')
+  @RequirePermissions('send:whatsapp')
+  @ApiOperation({ summary: 'Get WhatsApp results message template for this laboratory' })
+  async getMessageTemplate(@CurrentUser() user: CurrentUserPayload) {
+    const laboratoryId = user.laboratoryId;
+    if (!laboratoryId) throw new BadRequestException('Laboratory context required');
+    return this.whatsAppService.getResultsMessageTemplate(laboratoryId);
+  }
+
+  /**
+   * حفظ قالب مخصص. يتطلب إدارة إعدادات المختبر (أو manage:all).
+   */
+  @Put('message-template')
+  @RequirePermissions('manage:settings')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Save custom WhatsApp results message template' })
+  async putMessageTemplate(
+    @Body() dto: UpdateWhatsAppMessageTemplateDto,
+    @CurrentUser() user: CurrentUserPayload,
+  ) {
+    const laboratoryId = user.laboratoryId;
+    if (!laboratoryId) throw new BadRequestException('Laboratory context required');
+    await this.whatsAppService.setResultsMessageTemplate(laboratoryId, dto.template);
+    return { success: true as const, message: 'تم حفظ قالب الرسالة' };
+  }
+
+  /**
+   * حذف القالب المخصص والعودة للنص الافتراضي للنظام.
+   */
+  @Delete('message-template')
+  @RequirePermissions('manage:settings')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Clear custom template (use default message)' })
+  async deleteMessageTemplate(@CurrentUser() user: CurrentUserPayload) {
+    const laboratoryId = user.laboratoryId;
+    if (!laboratoryId) throw new BadRequestException('Laboratory context required');
+    await this.whatsAppService.clearResultsMessageTemplate(laboratoryId);
+    return { success: true as const, message: 'تم استخدام القالب الافتراضي' };
   }
 
   /**

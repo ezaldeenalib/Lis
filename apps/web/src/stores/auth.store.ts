@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { api } from '@/lib/api';
+import { clearReactQueryCache } from '@/lib/react-query-registry';
 
 interface User {
   id: string;
@@ -56,11 +57,13 @@ export const useAuthStore = create<AuthState>((set) => ({
 
     api.setToken(response.accessToken);
     localStorage.setItem('lis_user', JSON.stringify(response.user));
+    clearReactQueryCache();
 
     set({ user: response.user, isAuthenticated: true, isLoading: false });
   },
 
   logout: () => {
+    clearReactQueryCache();
     api.setToken(null);
     localStorage.removeItem('lis_user');
     set({ user: null, isAuthenticated: false, isLoading: false });

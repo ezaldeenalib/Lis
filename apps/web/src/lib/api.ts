@@ -1,3 +1,5 @@
+import { clearReactQueryCache } from '@/lib/react-query-registry';
+
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
 class ApiClient {
@@ -40,8 +42,14 @@ class ApiClient {
     });
 
     if (response.status === 401) {
+      clearReactQueryCache();
       this.setToken(null);
       if (typeof window !== 'undefined') {
+        try {
+          localStorage.removeItem('lis_user');
+        } catch {
+          /* ignore */
+        }
         window.location.href = '/login';
       }
       throw new Error('Unauthorized');
@@ -66,6 +74,10 @@ class ApiClient {
 
   put<T>(endpoint: string, data?: unknown) {
     return this.request<T>(endpoint, { method: 'PUT', body: JSON.stringify(data) });
+  }
+
+  patch<T>(endpoint: string, data?: unknown) {
+    return this.request<T>(endpoint, { method: 'PATCH', body: JSON.stringify(data) });
   }
 
   delete<T>(endpoint: string) {

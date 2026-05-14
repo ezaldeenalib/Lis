@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   ChevronDown,
@@ -39,18 +39,26 @@ import { Badge } from '@/components/ui/badge';
 import { formatDateTime } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 
-interface AuditLog {
+/** Shape returned by GET /api/v1/audit-logs (Prisma audit row + optional user). */
+interface AuditLogRow {
   id: string;
-  timestamp: string;
-  userId?: string;
-  userEmail?: string;
-  userName?: string;
+  createdAt: string;
+  userId?: string | null;
   action: string;
   entityType: string;
   entityId: string;
-  changes?: string;
-  oldValues?: Record<string, unknown>;
-  newValues?: Record<string, unknown>;
+  oldValues?: Record<string, unknown> | null;
+  newValues?: Record<string, unknown> | null;
+  user?: {
+    firstName: string;
+    lastName: string;
+    email: string;
+  } | null;
+}
+
+interface AuditLogsResponse {
+  data: AuditLogRow[];
+  meta: { total: number; page: number; limit: number; totalPages: number };
 }
 
 const ENTITY_TYPES = [
@@ -125,17 +133,30 @@ export default function AuditLogsPage() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const params = new URLSearchParams();
+  params.set('limit', '100');
   if (entityType && entityType !== 'All') params.set('entityType', entityType);
-  if (dateFrom) params.set('dateFrom', dateFrom);
-  if (dateTo) params.set('dateTo', dateTo);
 
-  const { data: logs = [], isLoading } = useQuery({
-    queryKey: ['audit-logs', entityType, dateFrom, dateTo],
+  const { data: response, isLoading } = useQuery({
+    queryKey: ['audit-logs', entityType],
     queryFn: () =>
-      api.get<AuditLog[]>(
-        `/api/v1/audit-logs${params.toString() ? `?${params}` : ''}`
-      ),
+      api.get<AuditLogsResponse>(`/api/v1/audit-logs?${params}`),
   });
+
+  const logs = useMemo(() => {
+    const rows = response?.data ?? [];
+    let out = rows;
+    if (dateFrom) {
+      const from = new Date(dateFrom);
+      from.setHours(0, 0, 0, 0);
+      out = out.filter((r) => new Date(r.createdAt) >= from);
+    }
+    if (dateTo) {
+      const to = new Date(dateTo);
+      to.setHours(23, 59, 59, 999);
+      out = out.filter((r) => new Date(r.createdAt) <= to);
+    }
+    return out;
+  }, [response?.data, dateFrom, dateTo]);
 
   return (
     <div className="space-y-6">
@@ -211,7 +232,7 @@ export default function AuditLogsPage() {
                   <TableHead>الإجراء</TableHead>
                   <TableHead>نوع السجل</TableHead>
                   <TableHead>المعرّف</TableHead>
-                  <TableHead>التغييرات</TableHead>
+                  <TableHead>نوع الإجراء</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -226,7 +247,6 @@ export default function AuditLogsPage() {
                     return (
                       <React.Fragment key={log.id}>
                         <TableRow
-                          key={log.id}
                           className={cn(
                             hasDetails && 'cursor-pointer hover:bg-muted/50'
                           )}
@@ -245,10 +265,12 @@ export default function AuditLogsPage() {
                             ) : null}
                           </TableCell>
                           <TableCell className="whitespace-nowrap text-sm">
-                            {formatDateTime(log.timestamp)}
+                            {formatDateTime(log.createdAt)}
                           </TableCell>
                           <TableCell>
-                            {log.userName ?? log.userEmail ?? log.userId ?? '-'}
+                            {log.user
+                              ? `${log.user.firstName} ${log.user.lastName}`.trim() || log.user.email
+                              : log.userId ?? '—'}
                           </TableCell>
                           <TableCell>
                             <Badge
@@ -267,8 +289,14 @@ export default function AuditLogsPage() {
                           <TableCell className="font-mono text-xs max-w-[120px] truncate">
                             {log.entityId}
                           </TableCell>
-                          <TableCell className="max-w-[200px] truncate">
-                            {log.changes ?? '-'}
+                          <TableCell className="max-w-[200px] truncate text-muted-foreground">
+                            {log.action === 'UPDATE'
+                              ? 'تحديث'
+                              : log.action === 'CREATE'
+                                ? 'إنشاء'
+                                : log.action === 'DELETE'
+                                  ? 'حذف'
+                                  : log.action}
                           </TableCell>
                         </TableRow>
                         {isExpanded && hasDetails && (
@@ -279,8 +307,8 @@ export default function AuditLogsPage() {
                                   تفاصيل التغييرات
                                 </h4>
                                 <ChangesDiff
-                                  oldValues={log.oldValues}
-                                  newValues={log.newValues}
+                                  oldValues={log.oldValues ?? undefined}
+                                  newValues={log.newValues ?? undefined}
                                 />
                               </div>
                             </TableCell>
@@ -328,7 +356,7 @@ export default function AuditLogsPage() {
                           )
                         ) : null}
                         <span className="text-xs text-muted-foreground whitespace-nowrap">
-                          {formatDateTime(log.timestamp)}
+                          {formatDateTime(log.createdAt)}
                         </span>
                       </div>
                       <Badge
@@ -345,19 +373,21 @@ export default function AuditLogsPage() {
                       </Badge>
                     </div>
                     <p className="text-sm font-medium truncate">
-                      {log.userName ?? log.userEmail ?? log.userId ?? '—'}
+                      {log.user
+                        ? `${log.user.firstName} ${log.user.lastName}`.trim() || log.user.email
+                        : log.userId ?? '—'}
                     </p>
                     <p className="text-xs text-muted-foreground">
                       {log.entityType}{' '}
                       <span className="ltr-isolate font-mono">{log.entityId}</span>
                     </p>
-                    {log.changes && (
-                      <p className="text-xs line-clamp-2 text-muted-foreground">{log.changes}</p>
-                    )}
                     {isExpanded && hasDetails && (
                       <div className="pt-2 border-t border-border text-sm">
                         <h4 className="font-medium mb-2">تفاصيل التغييرات</h4>
-                        <ChangesDiff oldValues={log.oldValues} newValues={log.newValues} />
+                        <ChangesDiff
+                          oldValues={log.oldValues ?? undefined}
+                          newValues={log.newValues ?? undefined}
+                        />
                       </div>
                     )}
                   </div>

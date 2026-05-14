@@ -9,6 +9,10 @@ import {
   Printer, Receipt, FileText, Info, Layers, FlaskConical, MessageSquare,
 } from 'lucide-react';
 import { api } from '@/lib/api';
+import {
+  applyWhatsAppResultsTemplate,
+  DEFAULT_WHATSAPP_RESULTS_TEMPLATE,
+} from '@/lib/whatsapp-results-message';
 import { useToast } from '@/hooks/use-toast';
 import { useBarcodePrint } from '@/hooks/use-barcode-print';
 import { useAuthStore } from '@/stores/auth.store';
@@ -390,16 +394,28 @@ function OrderDetailContent() {
   const canCreateInvoice = hasPermission('create:invoice');
   const canSendWhatsApp  = hasPermission('send:whatsapp');
 
+  const { data: waTemplateData } = useQuery({
+    queryKey: ['whatsapp-message-template'],
+    queryFn: () => api.get<{ template: string }>('/api/v1/whatsapp/message-template'),
+    enabled: canSendWhatsApp && !!order,
+    staleTime: 60_000,
+  });
+
   const openWaDialog = () => {
     if (!order) return;
     const phone = order.patient.phone?.trim() ?? '';
-    const msg =
-      `مرحباً ${order.patient.firstName} ${order.patient.lastName},\n\n` +
-      `نتائج تحاليلك لطلب رقم ${order.orderNumber} جاهزة.\n` +
-      `يرجى مراجعة الملف المرفق لعرض النتائج.\n\n` +
-      `مع تحيات فريق المختبر`;
+    const labName = user?.laboratoryName?.trim() || 'المختبر';
+    const tmpl = waTemplateData?.template ?? DEFAULT_WHATSAPP_RESULTS_TEMPLATE;
     setWaPhone(phone);
-    setWaMessage(msg);
+    setWaMessage(
+      applyWhatsAppResultsTemplate(tmpl, {
+        firstName: order.patient.firstName,
+        lastName: order.patient.lastName,
+        orderNumber: order.orderNumber,
+        mrn: order.patient.mrn,
+        labName,
+      }),
+    );
     setWaDialogOpen(true);
   };
 

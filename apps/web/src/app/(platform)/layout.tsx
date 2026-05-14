@@ -12,6 +12,9 @@ import {
   X,
   FlaskConical,
   ChevronRight,
+  BookOpen,
+  Cpu,
+  Link2,
 } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth.store';
 import { useListViewStore } from '@/stores/list-view.store';
@@ -25,10 +28,28 @@ interface NavItem {
   icon: React.ComponentType<{ className?: string }>;
 }
 
-const PLATFORM_NAV: NavItem[] = [
-  { href: '/platform', label: 'لوحة التحكم', icon: LayoutDashboard },
-  { href: '/platform/laboratories', label: 'المختبرات', icon: Building2 },
-  { href: '/platform/users', label: 'مستخدمو المنصة', icon: Users },
+interface NavSection {
+  label: string;
+  items: NavItem[];
+}
+
+const PLATFORM_NAV_SECTIONS: NavSection[] = [
+  {
+    label: 'الإدارة',
+    items: [
+      { href: '/platform', label: 'لوحة التحكم', icon: LayoutDashboard },
+      { href: '/platform/laboratories', label: 'المختبرات', icon: Building2 },
+      { href: '/platform/users', label: 'مستخدمو المنصة', icon: Users },
+    ],
+  },
+  {
+    label: 'الكتالوج والأجهزة',
+    items: [
+      { href: '/platform/catalog', label: 'الكتالوج الطبي', icon: BookOpen },
+      { href: '/platform/analyzers', label: 'أجهزة التحليل', icon: Cpu },
+      { href: '/platform/device-mappings', label: 'ربط تحاليل الأجهزة', icon: Link2 },
+    ],
+  },
 ];
 
 const PLATFORM_ROLES = ['SUPER_ADMIN', 'SUPPORT'];
@@ -65,8 +86,11 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
 
   if (!mounted || !isAuthenticated || !isPlatformUser) {
     return (
-      <div className="flex h-screen items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-3">
+      <div
+        className="flex h-screen items-center justify-center bg-background"
+        suppressHydrationWarning
+      >
+        <div className="flex flex-col items-center gap-3" suppressHydrationWarning>
           <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent" />
           <p className="text-sm text-muted-foreground">جارٍ التحميل...</p>
         </div>
@@ -75,24 +99,37 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
   }
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex min-h-screen bg-background" suppressHydrationWarning>
       {sidebarOpen && (
-        <div className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm lg:hidden" onClick={() => setSidebarOpen(false)} aria-hidden="true" />
+        <div
+          className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+          aria-hidden="true"
+          suppressHydrationWarning
+        />
       )}
 
       {/* Sidebar */}
-      <aside className={cn(
+      <aside
+        suppressHydrationWarning
+        className={cn(
         'fixed inset-y-0 right-0 z-50 flex w-[240px] flex-col border-s border-border bg-card shadow-dropdown',
         'transition-transform duration-200 lg:static lg:translate-x-0',
         sidebarOpen ? 'translate-x-0' : 'translate-x-full'
       )}>
         {/* Brand */}
-        <div className="flex h-[60px] items-center justify-between border-b border-border px-4">
+        <div
+          className="flex h-[60px] items-center justify-between border-b border-border px-4"
+          suppressHydrationWarning
+        >
           <Link href="/platform" className="flex items-center gap-2.5 font-bold text-foreground">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-violet-600 to-indigo-600 shadow-sm">
+            <div
+              className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-violet-600 to-indigo-600 shadow-sm"
+              suppressHydrationWarning
+            >
               <FlaskConical className="h-4 w-4 text-white" />
             </div>
-            <div className="leading-tight hidden lg:block">
+            <div className="leading-tight hidden lg:block" suppressHydrationWarning>
               <div className="text-sm font-extrabold">لوحة المنصة</div>
               <div className="text-[10px] text-muted-foreground font-normal">إدارة النظام</div>
             </div>
@@ -103,23 +140,32 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
         </div>
 
         {/* Nav */}
-        <nav className="flex-1 space-y-0.5 overflow-y-auto p-3 pt-4">
-          {PLATFORM_NAV.map((item) => {
-            const Icon = item.icon;
-            const isActive = pathname === item.href;
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={() => setSidebarOpen(false)}
-                className={cn('nav-link', isActive && 'active')}
-              >
-                <Icon className="h-4 w-4 shrink-0" />
-                <span className="flex-1">{item.label}</span>
-                {isActive && <ChevronRight className="h-3.5 w-3.5 opacity-50" />}
-              </Link>
-            );
-          })}
+        <nav className="flex-1 overflow-y-auto p-3 pt-4 space-y-4">
+          {PLATFORM_NAV_SECTIONS.map((section) => (
+            <div key={section.label}>
+              <p className="mb-1.5 px-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70">
+                {section.label}
+              </p>
+              <div className="space-y-0.5">
+                {section.items.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = pathname === item.href;
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={() => setSidebarOpen(false)}
+                      className={cn('nav-link', isActive && 'active')}
+                    >
+                      <Icon className="h-4 w-4 shrink-0" />
+                      <span className="flex-1">{item.label}</span>
+                      {isActive && <ChevronRight className="h-3.5 w-3.5 opacity-50" />}
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
         </nav>
 
         {/* User footer */}
@@ -158,8 +204,11 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
       </aside>
 
       {/* Main */}
-      <div className="flex flex-1 flex-col min-w-0">
-        <header className="sticky top-0 z-30 flex h-[60px] items-center gap-3 border-b border-border bg-card/95 backdrop-blur-sm px-4 lg:px-6">
+      <div className="flex flex-1 flex-col min-w-0" suppressHydrationWarning>
+        <header
+          className="sticky top-0 z-30 flex h-[60px] items-center gap-3 border-b border-border bg-card/95 backdrop-blur-sm px-4 lg:px-6"
+          suppressHydrationWarning
+        >
           <Button variant="ghost" size="icon" className="lg:hidden h-9 w-9" onClick={() => setSidebarOpen(true)}>
             <Menu className="h-4 w-4" />
           </Button>
@@ -168,11 +217,16 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
           </div>
           <div className="hidden flex-1 lg:block" />
           <ListViewToggle />
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-violet-600 to-indigo-600 text-xs font-bold text-white">
+          <div
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-violet-600 to-indigo-600 text-xs font-bold text-white"
+            suppressHydrationWarning
+          >
             {getInitials(user?.firstName, user?.lastName)}
           </div>
         </header>
-        <main className="flex-1 p-4 lg:p-6 animate-fade-in">{children}</main>
+        <main className="flex-1 p-4 lg:p-6 animate-fade-in" suppressHydrationWarning>
+          {children}
+        </main>
       </div>
     </div>
   );

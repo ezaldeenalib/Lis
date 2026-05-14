@@ -1,9 +1,9 @@
 import { PrismaClient } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 import {
-  seedLabServiceCatalogForLaboratory,
-  DEFAULT_LAB_SERVICE_CATALOG_COUNT,
-} from './catalog/seed-lab-service-catalog';
+  seedCatalogTestsFromJson,
+  DEFAULT_CATALOG_JSON_ROW_COUNT,
+} from './catalog/seed-catalog-tests';
 
 const prisma = new PrismaClient();
 
@@ -173,10 +173,10 @@ async function main() {
   }
   console.log('✅ Created demo users (all passwords: admin123)');
 
-  // 6. Predefined lab analyses catalog (~150+ tests: hematology, chemistry, hormones, …)
-  const catalog = await seedLabServiceCatalogForLaboratory(prisma, lab.id);
+  // 6. Global medical catalog only (`catalog_tests`). Labs activate tests via the UI — no `lab_services` bulk seed.
+  const catalog = await seedCatalogTestsFromJson(prisma);
   console.log(
-    `✅ Lab services catalog: ${catalog.inserted} newly inserted (${DEFAULT_LAB_SERVICE_CATALOG_COUNT} rows in catalog definition)`,
+    `✅ catalog_tests: ${catalog.seeded} newly inserted (${DEFAULT_CATALOG_JSON_ROW_COUNT} rows in JSON definition)`,
   );
 
   // 7. Create demo patients

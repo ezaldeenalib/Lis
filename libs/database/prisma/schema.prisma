@@ -286,24 +286,52 @@ enum SampleStatus {
 }
 
 // ============================================================
-// LAB SERVICES (Tests offered by the lab)
+// GLOBAL TEST CATALOG (Platform-controlled — no laboratoryId)
+// Platform admin manages this layer; labs can read, never write.
 // ============================================================
 
-model LabService {
-  id           String  @id @default(uuid())
-  code         String
+model CatalogTest {
+  id           String   @id @default(uuid())
+  code         String   @unique
   name         String
-  description  String?
+  nameAr       String?  @map("name_ar")
+  category     String?
   department   String?
-  price        Float   @default(0)
+  sampleType   String?  @map("sample_type")
   unit         String?
-  normalRange  String? @map("normal_range")
-  laboratoryId String  @map("laboratory_id")
-  isActive     Boolean @default(true) @map("is_active")
+  description  String?
+  isActive     Boolean  @default(true) @map("is_active")
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
+  labServices  LabService[]
+
+  @@map("catalog_tests")
+}
+
+// ============================================================
+// LAB SERVICES (Per-lab configuration layer over global catalog)
+// Labs customise: price, reference range, isActive.
+// The optional catalogTestId links to the global CatalogTest.
+// ============================================================
+
+model LabService {
+  id            String  @id @default(uuid())
+  code          String
+  name          String
+  description   String?
+  department    String?
+  price         Float   @default(0)
+  unit          String?
+  normalRange   String? @map("normal_range")
+  laboratoryId  String  @map("laboratory_id")
+  isActive      Boolean @default(true) @map("is_active")
+  catalogTestId String? @map("catalog_test_id")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
   laboratory     Laboratory          @relation(fields: [laboratoryId], references: [id], onDelete: Cascade)
+  catalogTest    CatalogTest?        @relation(fields: [catalogTestId], references: [id], onDelete: SetNull)
   sampleTests    SampleTest[]
   panelItems     PanelItem[]
   analyzerTests  AnalyzerTest[]
@@ -312,6 +340,7 @@ model LabService {
 
   @@unique([code, laboratoryId])
   @@index([laboratoryId])
+  @@index([catalogTestId])
   @@map("lab_services")
 }
 

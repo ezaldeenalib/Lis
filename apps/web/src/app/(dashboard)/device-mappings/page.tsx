@@ -1,24 +1,17 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import {
-  Plus,
-  Trash2,
-  Save,
   Loader2,
   Link2,
   AlertCircle,
   CheckCircle2,
   Cpu,
   RefreshCw,
+  ShieldAlert,
 } from 'lucide-react';
 import { api } from '@/lib/api';
-import { useToast } from '@/hooks/use-toast';
-import { usePermission } from '@/hooks/use-permission';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import {
   Card,
@@ -27,13 +20,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import {
   Table,
   TableBody,
@@ -67,14 +53,8 @@ const EMPTY_SERVER_MAPPINGS: MappingRow[] = [];
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export default function DeviceMappingsPage() {
-  const { toast } = useToast();
-  const qc = useQueryClient();
-  const canManage = usePermission('manage:analyzer');
-
   const [deviceId, setDeviceId] = useState('');
-  const [deviceIdInput, setDeviceIdInput] = useState('');
   const [rows, setRows] = useState<MappingRow[]>([]);
-  const [newCode, setNewCode] = useState('');
 
   // ── Fetch registered device IDs ──────────────────────────────────────────
   const { data: devicesData, isLoading: devicesLoading } = useQuery<string[]>({
@@ -83,7 +63,7 @@ export default function DeviceMappingsPage() {
   });
   const devices = devicesData ?? EMPTY_STRINGS;
 
-  // ── Fetch lab services ───────────────────────────────────────────────────
+  // ── Fetch lab services (for display labels) ──────────────────────────────
   const { data: servicesData } = useQuery<{ data: LabService[] }>({
     queryKey: ['lab-services'],
     queryFn: () => api.get<{ data: LabService[] }>('/api/v1/lab-services?limit=200'),
@@ -99,106 +79,36 @@ export default function DeviceMappingsPage() {
   });
   const serverMappings = mappingsData ?? EMPTY_SERVER_MAPPINGS;
 
-  // Sync fetched mappings → local editable rows (deps must be stable refs; see EMPTY_SERVER_MAPPINGS)
   useEffect(() => {
-    setRows(serverMappings.map((m) => ({ ...m, isDirty: false })));
+    setRows(serverMappings.map((m) => ({ ...m })));
   }, [deviceId, serverMappings]);
-
-  // ── Save mutation ────────────────────────────────────────────────────────
-  const saveMutation = useMutation({
-    mutationFn: (payload: { deviceId: string; mappings: { deviceCode: string; labServiceId: string }[] }) =>
-      api.post('/api/v1/device-mappings/bulk', payload),
-    onSuccess: () => {
-      toast({ title: 'تم الحفظ', description: 'تم تحديث خريطة التحاليل بنجاح' });
-      qc.invalidateQueries({ queryKey: ['device-mappings'] });
-    },
-    onError: (err: Error) => {
-      toast({ title: 'خطأ في الحفظ', description: err.message, variant: 'destructive' });
-    },
-  });
-
-  // ── Handlers ─────────────────────────────────────────────────────────────
 
   const handleSelectDevice = useCallback((id: string) => {
     setDeviceId(id);
-    setDeviceIdInput(id);
-    setNewCode('');
   }, []);
 
-  const handleAddNewDevice = () => {
-    const id = deviceIdInput.trim();
-    if (!id) return;
-    setDeviceId(id);
-    setRows([]);
-    setNewCode('');
-  };
-
-  const handleAddRow = () => {
-    const code = newCode.trim();
-    if (!code) return;
-    if (rows.some((r) => r.deviceCode.trim().toLowerCase() === code.toLowerCase())) {
-      toast({ title: 'الكود موجود مسبقاً', description: code, variant: 'destructive' });
-      return;
-    }
-    setRows((prev) => [...prev, { deviceCode: code, labServiceId: '', isDirty: true }]);
-    setNewCode('');
-  };
-
-  const handleChangeService = (deviceCode: string, labServiceId: string) => {
-    setRows((prev) =>
-      prev.map((r) => r.deviceCode === deviceCode ? { ...r, labServiceId, isDirty: true } : r),
-    );
-  };
-
-  const handleRemoveRow = (deviceCode: string) => {
-    setRows((prev) => prev.filter((r) => r.deviceCode !== deviceCode));
-  };
-
-  const handleSave = () => {
-    if (!deviceId) {
-      toast({ title: 'اختر الجهاز أولاً', variant: 'destructive' });
-      return;
-    }
-    const invalid = rows.filter((r) => !r.labServiceId);
-    if (invalid.length > 0) {
-      toast({
-        title: 'بعض الأكواد غير مربوطة',
-        description: `${invalid.map((r) => r.deviceCode).join(', ')} — يرجى تحديد خدمة لكل كود أو حذفه`,
-        variant: 'destructive',
-      });
-      return;
-    }
-    saveMutation.mutate({
-      deviceId,
-      mappings: rows.map((r) => ({ deviceCode: r.deviceCode, labServiceId: r.labServiceId })),
-    });
-  };
-
-  const unmapped = rows.filter((r) => !r.labServiceId).length;
   const mapped = rows.filter((r) => !!r.labServiceId).length;
-
-  // ── Render ────────────────────────────────────────────────────────────────
+  const unmapped = rows.filter((r) => !r.labServiceId).length;
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div>
+        <h1 className="text-2xl font-bold text-foreground">ربط تحاليل الأجهزة</h1>
+        <p className="text-sm text-muted-foreground mt-1">
+          عرض خريطة ربط تحاليل الأجهزة بالخدمات المخبرية
+        </p>
+      </div>
+
+      {/* Platform-only notice */}
+      <div className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50/60 px-4 py-3 text-sm text-amber-800">
+        <ShieldAlert className="h-5 w-5 shrink-0 mt-0.5 text-amber-600" />
         <div>
-          <h1 className="text-2xl font-bold text-foreground">ربط تحاليل الأجهزة</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            اربط كود التحليل الصادر من الجهاز بالخدمة المخبرية المقابلة في النظام
+          <p className="font-semibold mb-0.5">قراءة فقط</p>
+          <p className="text-xs leading-relaxed">
+            إضافة الأجهزة وتحرير خرائط التحاليل محجوزة لمشرف المنصة وفق سياسة الحوكمة المركزية.
           </p>
         </div>
-        {deviceId && canManage && (
-          <Button onClick={handleSave} disabled={saveMutation.isPending} className="gap-2">
-            {saveMutation.isPending ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Save className="h-4 w-4" />
-            )}
-            حفظ الخريطة
-          </Button>
-        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -213,14 +123,13 @@ export default function DeviceMappingsPage() {
               <CardDescription>اختر جهازاً مسجّلاً أو أضف جهازاً جديداً</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
-              {/* Existing devices */}
               {devicesLoading ? (
                 <div className="flex justify-center py-4">
                   <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
                 </div>
               ) : devices.length > 0 ? (
                 <div className="space-y-1">
-                  <Label className="text-xs text-muted-foreground">أجهزة مسجّلة</Label>
+                  <p className="text-xs text-muted-foreground">أجهزة مسجّلة</p>
                   {devices.map((d) => (
                     <button
                       key={d}
@@ -236,26 +145,7 @@ export default function DeviceMappingsPage() {
                   ))}
                 </div>
               ) : (
-                <p className="text-xs text-muted-foreground">لا توجد أجهزة مسجّلة بعد</p>
-              )}
-
-              {/* Add new device */}
-              {canManage && (
-                <div className="pt-2 border-t">
-                  <Label className="text-xs text-muted-foreground">جهاز جديد</Label>
-                  <div className="flex gap-2 mt-1.5">
-                    <Input
-                      placeholder="مثال: XP-300"
-                      value={deviceIdInput}
-                      onChange={(e) => setDeviceIdInput(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && handleAddNewDevice()}
-                      className="font-mono text-sm h-8"
-                    />
-                    <Button size="sm" variant="outline" className="h-8 px-2" onClick={handleAddNewDevice}>
-                      <Plus className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
+                <p className="text-xs text-muted-foreground">لا توجد أجهزة مسجّلة — يقوم مشرف المنصة بإضافة الأجهزة</p>
               )}
             </CardContent>
           </Card>
@@ -321,14 +211,13 @@ export default function DeviceMappingsPage() {
                         <TableHead className="w-36">كود الجهاز</TableHead>
                         <TableHead>الخدمة المخبرية في النظام</TableHead>
                         <TableHead className="w-20 text-center">الحالة</TableHead>
-                        {canManage && <TableHead className="w-16" />}
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {rows.length === 0 && (
                         <TableRow>
-                          <TableCell colSpan={4} className="text-center py-8 text-muted-foreground text-sm">
-                            لا توجد أكواد — أضف كوداً من الحقل أدناه
+                          <TableCell colSpan={3} className="text-center py-8 text-muted-foreground text-sm">
+                            لا توجد أكواد مرتبطة بهذا الجهاز
                           </TableCell>
                         </TableRow>
                       )}
@@ -340,34 +229,15 @@ export default function DeviceMappingsPage() {
                               <span className="font-mono font-semibold text-sm">{row.deviceCode}</span>
                             </TableCell>
                             <TableCell>
-                              {canManage ? (
-                                <Select
-                                  value={row.labServiceId || '__none'}
-                                  onValueChange={(v) =>
-                                    handleChangeService(row.deviceCode, v === '__none' ? '' : v)
-                                  }
-                                >
-                                  <SelectTrigger className="h-8 text-sm">
-                                    <SelectValue placeholder="اختر خدمة..." />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="__none" className="text-muted-foreground">
-                                      — اختر —
-                                    </SelectItem>
-                                    {labServices.map((s) => (
-                                      <SelectItem key={s.id} value={s.id}>
-                                        <span className="font-mono text-xs text-muted-foreground ml-1">
-                                          {s.code}
-                                        </span>{' '}
-                                        {s.name}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              ) : svc ? (
+                              {svc ? (
                                 <span className="text-sm">
                                   <span className="font-mono text-xs text-muted-foreground">{svc.code}</span>{' '}
                                   {svc.name}
+                                </span>
+                              ) : row.labService ? (
+                                <span className="text-sm">
+                                  <span className="font-mono text-xs text-muted-foreground">{row.labService.code}</span>{' '}
+                                  {row.labService.name}
                                 </span>
                               ) : (
                                 <span className="text-sm text-muted-foreground">—</span>
@@ -380,18 +250,6 @@ export default function DeviceMappingsPage() {
                                 <AlertCircle className="h-4 w-4 text-destructive mx-auto" />
                               )}
                             </TableCell>
-                            {canManage && (
-                              <TableCell>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-7 w-7 text-muted-foreground hover:text-destructive"
-                                  onClick={() => handleRemoveRow(row.deviceCode)}
-                                >
-                                  <Trash2 className="h-3.5 w-3.5" />
-                                </Button>
-                              </TableCell>
-                            )}
                           </TableRow>
                         );
                       })}
@@ -399,40 +257,7 @@ export default function DeviceMappingsPage() {
                   </Table>
                 </div>
 
-                {/* Add new code row */}
-                {canManage && (
-                  <div className="flex gap-2 pt-1">
-                    <Input
-                      placeholder="كود جديد (مثال: WBC)"
-                      value={newCode}
-                      onChange={(e) => setNewCode(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && handleAddRow()}
-                      className="font-mono max-w-[180px] h-9 text-sm"
-                    />
-                    <Button variant="outline" size="sm" className="gap-1.5 h-9" onClick={handleAddRow}>
-                      <Plus className="h-4 w-4" />
-                      إضافة كود
-                    </Button>
-                  </div>
-                )}
-
-                {/* Save button (bottom) */}
-                {canManage && rows.length > 0 && (
-                  <div className="flex justify-end pt-2 border-t">
-                    <Button
-                      onClick={handleSave}
-                      disabled={saveMutation.isPending}
-                      className="gap-2"
-                    >
-                      {saveMutation.isPending ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Save className="h-4 w-4" />
-                      )}
-                      حفظ الخريطة ({rows.length} كود)
-                    </Button>
-                  </div>
-                )}
+                {/* No edit actions — platform managed */}
               </CardContent>
             </Card>
           )}

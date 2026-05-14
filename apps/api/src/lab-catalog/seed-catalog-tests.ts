@@ -22,35 +22,30 @@ function resolveCatalogJsonPath(): string {
   );
 }
 
-const DEFAULT_LAB_SERVICES: DefaultLabServiceRow[] = JSON.parse(
+const RAW_CATALOG: DefaultLabServiceRow[] = JSON.parse(
   readFileSync(resolveCatalogJsonPath(), 'utf8'),
 ) as DefaultLabServiceRow[];
 
-export const DEFAULT_LAB_SERVICE_CATALOG_COUNT = DEFAULT_LAB_SERVICES.length;
-
 /**
- * Same seed logic as prisma seed; reads JSON via cwd so Nest `rootDir` stays `apps/api/src`.
+ * Upserts catalog_tests from the default JSON.
+ * Safe to call multiple times (idempotent via skipDuplicates).
  */
-export async function seedLabServiceCatalogForLaboratory(
-  prisma: Pick<PrismaClient, 'labService'>,
-  laboratoryId: string,
-): Promise<{ inserted: number }> {
-  const data = DEFAULT_LAB_SERVICES.map((s) => ({
-    code: s.code.trim(),
-    name: s.name,
-    description: s.description ?? undefined,
-    department: s.department,
-    price: typeof s.price === 'number' ? s.price : 12,
-    unit: s.unit ?? '',
-    normalRange: s.normalRange ?? '',
+export async function seedCatalogTests(
+  prisma: Pick<PrismaClient, 'catalogTest'>,
+): Promise<{ seeded: number }> {
+  const data = RAW_CATALOG.map((row) => ({
+    code: row.code.trim().toUpperCase(),
+    name: row.name.trim(),
+    department: row.department?.trim() ?? null,
+    unit: row.unit?.trim() ?? null,
+    description: row.description?.trim() ?? null,
     isActive: true,
-    laboratoryId,
   }));
 
-  const { count } = await prisma.labService.createMany({
+  const { count } = await prisma.catalogTest.createMany({
     data,
     skipDuplicates: true,
   });
 
-  return { inserted: count };
+  return { seeded: count };
 }

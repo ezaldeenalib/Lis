@@ -19,6 +19,10 @@ import { useListViewStore } from '@/stores/list-view.store';
 import { usePermission } from '@/hooks/use-permission';
 import { useToast } from '@/hooks/use-toast';
 import { api } from '@/lib/api';
+import {
+  applyWhatsAppResultsTemplate,
+  DEFAULT_WHATSAPP_RESULTS_TEMPLATE,
+} from '@/lib/whatsapp-results-message';
 import { StatsCard } from '@/components/dashboard/stats-card';
 import { TableScrollArea } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -145,6 +149,25 @@ export default function DashboardPage() {
     patientMrn: string;
   } | null>(null);
 
+  const { data: stats, isLoading: statsLoading } = useQuery({
+    queryKey: ['dashboard', 'stats'],
+    queryFn: () => api.get<DashboardStats>('/api/v1/dashboard/stats'),
+    refetchInterval: 60_000,
+  });
+
+  const { data: recentOrders, isLoading: ordersLoading } = useQuery({
+    queryKey: ['dashboard', 'recent-orders'],
+    queryFn: () => api.get<RecentOrder[]>('/api/v1/dashboard/recent-orders?limit=8'),
+    refetchInterval: 30_000,
+  });
+
+  const { data: waTemplateData } = useQuery({
+    queryKey: ['whatsapp-message-template'],
+    queryFn: () => api.get<{ template: string }>('/api/v1/whatsapp/message-template'),
+    enabled: canSendWhatsApp,
+    staleTime: 60_000,
+  });
+
   const openWaDialog = (order: RecentOrder) => {
     const phone = order.patient.phone?.trim() ?? '';
     setWaTarget({
@@ -156,11 +179,16 @@ export default function DashboardPage() {
       patientMrn: order.patient.mrn,
     });
     setWaPhone(phone);
+    const labName = user?.laboratoryName?.trim() || 'المختبر';
+    const tmpl = waTemplateData?.template ?? DEFAULT_WHATSAPP_RESULTS_TEMPLATE;
     setWaMessage(
-      `مرحباً ${order.patient.firstName} ${order.patient.lastName},\n\n` +
-        `نتائج تحاليلك لطلب رقم ${order.orderNumber} جاهزة.\n` +
-        `يرجى مراجعة الملف المرفق لعرض النتائج.\n\n` +
-        `مع تحيات فريق المختبر`,
+      applyWhatsAppResultsTemplate(tmpl, {
+        firstName: order.patient.firstName,
+        lastName: order.patient.lastName,
+        orderNumber: order.orderNumber,
+        mrn: order.patient.mrn,
+        labName,
+      }),
     );
     setWaOpen(true);
   };
@@ -175,18 +203,6 @@ export default function DashboardPage() {
       toast.success('تم الإرسال عبر واتساب بنجاح');
     },
     onError: (err: Error) => toast.error(err.message),
-  });
-
-  const { data: stats, isLoading: statsLoading } = useQuery({
-    queryKey: ['dashboard', 'stats'],
-    queryFn: () => api.get<DashboardStats>('/api/v1/dashboard/stats'),
-    refetchInterval: 60_000,
-  });
-
-  const { data: recentOrders, isLoading: ordersLoading } = useQuery({
-    queryKey: ['dashboard', 'recent-orders'],
-    queryFn: () => api.get<RecentOrder[]>('/api/v1/dashboard/recent-orders?limit=8'),
-    refetchInterval: 30_000,
   });
 
   const today = new Date().toLocaleDateString('ar-SA', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });

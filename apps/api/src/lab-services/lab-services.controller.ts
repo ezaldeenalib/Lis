@@ -8,6 +8,7 @@ import {
   Param,
   Query,
   UseGuards,
+  ForbiddenException,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -16,11 +17,14 @@ import {
   ApiQuery,
 } from '@nestjs/swagger';
 import { LabServicesService } from './lab-services.service';
-import { CreateLabServiceDto } from './dto/create-lab-service.dto';
-import { UpdateLabServiceDto } from './dto/update-lab-service.dto';
+import { ActivateLabServiceDto } from './dto/activate-lab-service.dto';
+import { UpdateLabServiceConfigDto } from './dto/update-lab-service-config.dto';
 import { CurrentUser, CurrentUserPayload } from '../auth/decorators/current-user.decorator';
 import { RequirePermissions } from '../auth/decorators/permissions.decorator';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
+
+const CATALOG_OWNED_MSG =
+  'لا يمكن تعديل الهوية الطبية للتحليل (الكود، الاسم، القسم، الوحدة). هذه الحقول مملوكة للكتالوج العالمي.';
 
 @ApiTags('lab-services')
 @ApiBearerAuth()
@@ -29,12 +33,16 @@ import { PermissionsGuard } from '../auth/guards/permissions.guard';
 export class LabServicesController {
   constructor(private labServicesService: LabServicesService) {}
 
+  /**
+   * List all activated lab services for the current laboratory.
+   * Response includes both catalog-owned identity fields and lab-configurable fields.
+   */
   @Get()
-  @ApiOperation({ summary: 'List lab services with pagination and search' })
+  @ApiOperation({ summary: 'List activated lab services with catalog data' })
   @ApiQuery({ name: 'page', required: false })
   @ApiQuery({ name: 'limit', required: false })
   @ApiQuery({ name: 'search', required: false })
-  async list(
+  list(
     @Query('page') page?: number,
     @Query('limit') limit?: number,
     @Query('search') search?: string,
@@ -42,33 +50,74 @@ export class LabServicesController {
     return this.labServicesService.list({ page, limit, search });
   }
 
-  @Post()
+  /**
+   * Browse catalog tests not yet activated for this lab (used by the activation modal).
+   */
+  @Get('available-catalog')
+  @ApiOperation({ summary: 'List catalog tests not yet activated for this lab' })
+  @ApiQuery({ name: 'search', required: false })
+  @ApiQuery({ name: 'limit', required: false })
+  getAvailableCatalog(
+    @Query('search') search?: string,
+    @Query('limit') limit?: number,
+  ) {
+    return this.labServicesService.getUnactivatedCatalogTests({ search, limit });
+  }
+
+  /**
+   * Activate a catalog test for this laboratory.
+   * This creates a lab_service record linked to the global catalog test.
+   * The lab only configures: price, normalRange.
+   */
+  @Post('activate')
   @RequirePermissions('manage:labService')
-  @ApiOperation({ summary: 'Create a new lab service' })
-  async create(
-    @Body() dto: CreateLabServiceDto,
+  @ApiOperation({ summary: 'Activate a global catalog test for this laboratory' })
+  activate(
+    @Body() dto: ActivateLabServiceDto,
     @CurrentUser() user: CurrentUserPayload,
   ) {
-    return this.labServicesService.create(dto, user?.laboratoryId);
+    return this.labServicesService.activate(dto, user?.laboratoryId);
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Get lab service by ID' })
-  async getById(@Param('id') id: string) {
+  @ApiOperation({ summary: 'Get activated lab service by ID' })
+  getById(@Param('id') id: string) {
     return this.labServicesService.findById(id);
   }
 
+  /**
+   * Update ONLY lab-configurable fields: price, normalRange, isActive.
+   * Medical identity (code, name, department, unit) is catalog-owned and cannot be modified.
+   */
   @Put(':id')
   @RequirePermissions('manage:labService')
-  @ApiOperation({ summary: 'Update a lab service' })
-  async update(@Param('id') id: string, @Body() dto: UpdateLabServiceDto) {
-    return this.labServicesService.update(id, dto);
+  @ApiOperation({ summary: 'Update lab operational config (price, range, isActive only)' })
+  updateConfig(@Param('id') id: string, @Body() dto: UpdateLabServiceConfigDto) {
+    return this.labServicesService.updateConfig(id, dto);
   }
 
+  /**
+   * Deactivate (remove) a lab service from this laboratory.
+   * The global catalog test remains unaffected.
+   */
   @Delete(':id')
   @RequirePermissions('manage:labService')
-  @ApiOperation({ summary: 'Delete a lab service' })
-  async delete(@Param('id') id: string) {
+  @ApiOperation({ summary: 'Deactivate (remove) a lab service from this laboratory' })
+  delete(@Param('id') id: string) {
     return this.labServicesService.delete(id);
+  }
+
+  // ── Deprecated endpoint — blocks standalone creation attempts ──────────────
+
+  @Post()
+  @RequirePermissions('manage:labService')
+  @ApiOperation({
+    summary: '[DEPRECATED] Use POST /activate instead',
+    description: 'Standalone lab service creation is no longer allowed. Use POST /api/v1/lab-services/activate.',
+  })
+  createStandalone() {
+    throw new ForbiddenException(
+      'إنشاء خدمة مستقلة لم يعد مدعوماً. يجب تفعيل التحليل من الكتالوج العالمي عبر POST /api/v1/lab-services/activate',
+    );
   }
 }
