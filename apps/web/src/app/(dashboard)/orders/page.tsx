@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, Fragment } from 'react';
+import { useState, useMemo, Fragment, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -17,7 +17,9 @@ import {
   ClipboardList,
   User,
   FileText,
+  Sparkles,
 } from 'lucide-react';
+import { NewOrderWizard } from '@/components/orders/new-order-wizard';
 import { EmptyState } from '@/components/ui/empty-state';
 import { api } from '@/lib/api';
 import {
@@ -310,6 +312,24 @@ export default function OrdersPage() {
   const [page, setPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState<OrderStatus | 'ALL'>('ALL');
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [wizardOpen, setWizardOpen] = useState(false);
+  const [orderMode, setOrderMode] = useState<'smart' | 'classic'>('smart');
+
+  // Persist mode choice
+  useEffect(() => {
+    const saved = localStorage.getItem('lis_order_mode');
+    if (saved === 'smart' || saved === 'classic') setOrderMode(saved);
+  }, []);
+
+  const handleModeChange = (mode: 'smart' | 'classic') => {
+    setOrderMode(mode);
+    localStorage.setItem('lis_order_mode', mode);
+  };
+
+  const openNewOrder = () => {
+    if (orderMode === 'smart') setWizardOpen(true);
+    else setDialogOpen(true);
+  };
   const [patientSearch, setPatientSearch] = useState('');
   const [form, setForm] = useState({
     patientId: '',
@@ -390,6 +410,26 @@ export default function OrdersPage() {
   const physicians = (usersData?.data ?? []).filter(
     (u) => u.role === 'Specialist' || u.role === 'LabAdmin'
   );
+
+  /** يملأ خريطة خدمات الباقة من استجابة القائمة حتى يُحسب التغطية فوراً ويُخفى التكرار في «التحاليل الفردية». */
+  useEffect(() => {
+    if (!dialogOpen || panels.length === 0) return;
+    setPanelServicesMap((prev) => {
+      let changed = false;
+      const next = { ...prev };
+      for (const p of panels) {
+        if (next[p.id]) continue;
+        const fromItems = p.panelItems?.map((it) => it.labService).filter(Boolean) as PanelService[] | undefined;
+        const fromAlt = p.services?.length ? p.services : undefined;
+        const svcs = fromItems?.length ? fromItems : fromAlt;
+        if (svcs?.length) {
+          next[p.id] = svcs;
+          changed = true;
+        }
+      }
+      return changed ? next : prev;
+    });
+  }, [dialogOpen, panels]);
 
   const filteredPatients = patientSearch.trim().length >= 1
     ? allPatients.filter((p) => {
@@ -519,10 +559,17 @@ export default function OrdersPage() {
   };
 
   const toggleServiceForSample = (sampleId: string, serviceId: string) => {
-    setSamples((prev) => prev.map((s) => {
-      if (s.id !== sampleId) return s;
-      return { ...s, serviceIds: s.serviceIds.includes(serviceId) ? s.serviceIds.filter((id) => id !== serviceId) : [...s.serviceIds, serviceId] };
-    }));
+    setSamples((prev) => {
+      const covered = allServiceIdsCoveredBySelectedPanels(prev, getServicesForPanel);
+      return prev.map((s) => {
+        if (s.id !== sampleId) return s;
+        if (s.serviceIds.includes(serviceId)) {
+          return { ...s, serviceIds: s.serviceIds.filter((id) => id !== serviceId) };
+        }
+        if (covered.has(serviceId)) return s;
+        return { ...s, serviceIds: [...s.serviceIds, serviceId] };
+      });
+    });
   };
 
   const hasAnySelection = samples.some((s) => s.serviceIds.length > 0 || s.panelIds.length > 0);
@@ -543,12 +590,37 @@ export default function OrdersPage() {
             {data?.meta ? `${data.meta.total} طلب` : 'إدارة طلبات المختبر'}
           </p>
         </div>
-        {canCreate && (
-          <Button onClick={() => setDialogOpen(true)} className="gap-2 shadow-sm">
-            <Plus className="h-4 w-4" />
-            طلب جديد
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          {/* Mode toggle */}
+          <div className="flex items-center gap-0.5 rounded-lg border border-border bg-muted p-0.5">
+            <button
+              onClick={() => handleModeChange('smart')}
+              className={cn(
+                'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-semibold transition-all',
+                orderMode === 'smart' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground',
+              )}
+            >
+              <Sparkles className="h-3.5 w-3.5" />
+              ذكي
+            </button>
+            <button
+              onClick={() => handleModeChange('classic')}
+              className={cn(
+                'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-semibold transition-all',
+                orderMode === 'classic' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground',
+              )}
+            >
+              <ClipboardList className="h-3.5 w-3.5" />
+              كلاسيكي
+            </button>
+          </div>
+          {canCreate && (
+            <Button onClick={openNewOrder} className="gap-2 shadow-sm">
+              <Plus className="h-4 w-4" />
+              طلب جديد
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Status tabs */}
@@ -1200,7 +1272,11 @@ export default function OrdersPage() {
                       )}
 
                       {sample.serviceTab === 'individual' && (
-                        <div className="max-h-36 overflow-y-auto rounded-md border bg-background p-2 space-y-0.5">
+                        <div className="space-y-1.5">
+                          <p className="text-[11px] text-muted-foreground leading-relaxed px-0.5">
+                            تُستبعد تلقائياً من القائمة أي تحليل مُضمَّن في باقة مُختارة في هذا الطلب (في أي عينة) لتجنب التكرار والتضارب.
+                          </p>
+                          <div className="max-h-36 overflow-y-auto rounded-md border bg-background p-2 space-y-0.5">
                           {services.length === 0 ? (
                             <p className="py-3 text-center text-xs text-muted-foreground">جارٍ تحميل الخدمات...</p>
                           ) : visibleServices.length === 0 ? (
@@ -1225,6 +1301,7 @@ export default function OrdersPage() {
                               );
                             })
                           )}
+                          </div>
                         </div>
                       )}
 
@@ -1249,6 +1326,15 @@ export default function OrdersPage() {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Smart Order Wizard */}
+      <NewOrderWizard
+        open={wizardOpen}
+        onOpenChange={setWizardOpen}
+        onCreated={() => {
+          queryClient.invalidateQueries({ queryKey: ['orders'] });
+        }}
+      />
     </div>
   );
 }

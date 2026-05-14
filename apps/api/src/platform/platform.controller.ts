@@ -12,7 +12,8 @@ import { UpdateCatalogTestDto } from '../catalog/dto/update-catalog-test.dto';
 import { CreateAnalyzerDto } from '../analyzers/dto/create-analyzer.dto';
 import { UpdateAnalyzerDto } from '../analyzers/dto/update-analyzer.dto';
 import { BulkMappingDto } from '../device-mappings/dto/bulk-mapping.dto';
-import { IsString, IsNotEmpty } from 'class-validator';
+import { IsString, IsNotEmpty, IsArray, ValidateNested, IsUUID, IsOptional, ArrayMinSize } from 'class-validator';
+import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 
 class CreatePlatformAnalyzerDto extends CreateAnalyzerDto {
@@ -27,6 +28,31 @@ class BulkMappingWithLabDto extends BulkMappingDto {
   @IsString()
   @IsNotEmpty()
   laboratoryId!: string;
+}
+
+class CatalogMappingItemDto {
+  @ApiProperty({ example: 'WBC', description: 'Analyte code sent by the device' })
+  @IsString()
+  @IsNotEmpty()
+  deviceCode!: string;
+
+  @ApiProperty({ description: 'Global catalog test UUID' })
+  @IsUUID()
+  catalogTestId!: string;
+}
+
+class BulkCatalogMappingDto {
+  @ApiProperty({ example: 'XP-300', description: 'Device identifier used by the helper app' })
+  @IsString()
+  @IsNotEmpty()
+  deviceId!: string;
+
+  @ApiProperty({ type: [CatalogMappingItemDto] })
+  @IsArray()
+  @ArrayMinSize(1)
+  @ValidateNested({ each: true })
+  @Type(() => CatalogMappingItemDto)
+  mappings!: CatalogMappingItemDto[];
 }
 
 @ApiTags('platform')
@@ -59,6 +85,19 @@ export class PlatformController {
   @ApiOperation({ summary: 'Get laboratory details' })
   getLaboratory(@Param('id') id: string) {
     return this.platformService.getLaboratory(id);
+  }
+
+  @Get('lab-services')
+  @ApiOperation({ summary: '[PLATFORM] List activated lab services for a laboratory' })
+  @ApiQuery({ name: 'laboratoryId', required: true, description: 'Target laboratory' })
+  @ApiQuery({ name: 'limit', required: false })
+  @ApiQuery({ name: 'search', required: false })
+  listLabServicesForLaboratory(
+    @Query('laboratoryId') laboratoryId: string,
+    @Query('limit') limit?: number,
+    @Query('search') search?: string,
+  ) {
+    return this.platformService.listLabServicesForLaboratory({ laboratoryId, limit, search });
   }
 
   @Put('laboratories/:id/toggle-status')
@@ -214,5 +253,53 @@ export class PlatformController {
   @ApiOperation({ summary: '[PLATFORM] Seed catalog_tests from JSON then link orphan lab_services' })
   migrationSeedAndLink() {
     return this.platformService.migrationSeedAndLinkCatalog();
+  }
+
+  // ── Catalog Device Mappings ────────────────────────────────────────────────
+
+  @Get('catalog-device-mappings/devices')
+  @ApiOperation({ summary: '[PLATFORM] List device IDs with catalog-level mappings' })
+  listCatalogDeviceIds() {
+    return this.platformService.listCatalogDeviceIds();
+  }
+
+  @Get('catalog-device-mappings')
+  @ApiOperation({ summary: '[PLATFORM] List catalog-level device mappings' })
+  @ApiQuery({ name: 'deviceId', required: false })
+  @ApiQuery({ name: 'catalogTestId', required: false })
+  listCatalogDeviceMappings(
+    @Query('deviceId') deviceId?: string,
+    @Query('catalogTestId') catalogTestId?: string,
+  ) {
+    return this.platformService.listCatalogDeviceMappings({ deviceId, catalogTestId });
+  }
+
+  @Post('catalog-device-mappings/bulk')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: '[PLATFORM] Save catalog-level device mappings (full-replace per device)' })
+  saveCatalogDeviceMappingsBulk(@Body() dto: BulkCatalogMappingDto) {
+    return this.platformService.saveCatalogDeviceMappingsBulk(dto);
+  }
+
+  @Delete('catalog-device-mappings/:id')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: '[PLATFORM] Delete a single catalog device mapping' })
+  deleteCatalogDeviceMapping(@Param('id') id: string) {
+    return this.platformService.deleteCatalogDeviceMapping(id);
+  }
+
+  // ── Promotion Migration ────────────────────────────────────────────────────
+
+  @Get('migration/promote-mappings')
+  @ApiOperation({ summary: '[PLATFORM] Dry-run: identify lab mappings eligible for catalog promotion' })
+  migrationPromoteMappingsReport() {
+    return this.platformService.migrationPromoteMappingsReport();
+  }
+
+  @Post('migration/promote-mappings')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: '[PLATFORM] Execute: promote consistent lab mappings to catalog level' })
+  migrationPromoteMappingsExecute() {
+    return this.platformService.migrationPromoteMappingsExecute();
   }
 }

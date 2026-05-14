@@ -15,6 +15,7 @@ import {
   BookOpen,
   Cpu,
   Link2,
+  Globe,
 } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth.store';
 import { useListViewStore } from '@/stores/list-view.store';
@@ -47,7 +48,8 @@ const PLATFORM_NAV_SECTIONS: NavSection[] = [
     items: [
       { href: '/platform/catalog', label: 'الكتالوج الطبي', icon: BookOpen },
       { href: '/platform/analyzers', label: 'أجهزة التحليل', icon: Cpu },
-      { href: '/platform/device-mappings', label: 'ربط تحاليل الأجهزة', icon: Link2 },
+      { href: '/platform/device-mappings', label: 'ربط تحاليل الأجهزة (مختبر)', icon: Link2 },
+      { href: '/platform/catalog-device-mappings', label: 'ربط الكتالوج بالأجهزة', icon: Globe },
     ],
   },
 ];

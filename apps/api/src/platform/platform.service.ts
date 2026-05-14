@@ -124,6 +124,72 @@ export class PlatformService {
     return lab;
   }
 
+  /**
+   * Activated lab services for one laboratory. Platform JWT cannot call GET /api/v1/lab-services
+   * (PermissionsGuard rejects type === platform), so the web app uses this route instead.
+   */
+  async listLabServicesForLaboratory(query: { laboratoryId: string; limit?: number; search?: string }) {
+    const laboratoryId = query.laboratoryId?.trim();
+    if (!laboratoryId) throw new BadRequestException('laboratoryId is required');
+
+    const lab = await this.prisma.laboratory.findUnique({ where: { id: laboratoryId } });
+    if (!lab) throw new NotFoundException('Laboratory not found');
+
+    const limit = Math.min(Number(query.limit) || 200, 500);
+    const search = query.search?.trim();
+
+    const searchWhere = search
+      ? {
+          OR: [
+            { name: { contains: search, mode: 'insensitive' as const } },
+            { code: { contains: search, mode: 'insensitive' as const } },
+            { department: { contains: search, mode: 'insensitive' as const } },
+            {
+              catalogTest: {
+                OR: [
+                  { name: { contains: search, mode: 'insensitive' as const } },
+                  { code: { contains: search, mode: 'insensitive' as const } },
+                  { department: { contains: search, mode: 'insensitive' as const } },
+                ],
+              },
+            },
+          ],
+        }
+      : {};
+
+    const where = { laboratoryId, ...searchWhere };
+
+    const [data, total] = await this.prisma.withoutTenant(() =>
+      Promise.all([
+        this.prisma.labService.findMany({
+          where,
+          take: limit,
+          orderBy: [{ department: 'asc' }, { name: 'asc' }],
+          include: {
+            catalogTest: {
+              select: {
+                id: true,
+                code: true,
+                name: true,
+                nameAr: true,
+                department: true,
+                category: true,
+                sampleType: true,
+                unit: true,
+              },
+            },
+          },
+        }),
+        this.prisma.labService.count({ where }),
+      ]),
+    );
+
+    return {
+      data,
+      meta: { total, page: 1, limit, totalPages: Math.ceil(total / limit) || 1 },
+    };
+  }
+
   async toggleLabStatus(id: string) {
     const lab = await this.prisma.laboratory.findUnique({ where: { id } });
     if (!lab) throw new NotFoundException('Laboratory not found');
@@ -447,5 +513,183 @@ export class PlatformService {
     const { seeded } = await seedCatalogTests(this.prisma);
     const linkResult = await this.migrationLinkServicesToCatalog();
     return { catalogTestsSeeded: seeded, ...linkResult };
+  }
+
+  // ── Catalog Device Mappings (PLATFORM ONLY) ────────────────────────────────
+
+  /**
+   * List all catalog-level device mappings, optionally filtered by deviceId.
+   */
+  async listCatalogDeviceMappings(query: { deviceId?: string; catalogTestId?: string }) {
+    const where: Record<string, unknown> = {};
+    if (query.deviceId) where.deviceId = { equals: query.deviceId.trim(), mode: 'insensitive' };
+    if (query.catalogTestId) where.catalogTestId = query.catalogTestId;
+
+    return this.prisma.catalogDeviceMapping.findMany({
+      where,
+      include: {
+        catalogTest: {
+          select: { id: true, code: true, name: true, nameAr: true, department: true },
+        },
+      },
+      orderBy: [{ deviceId: 'asc' }, { deviceCode: 'asc' }],
+    });
+  }
+
+  /**
+   * Upsert catalog-level device mappings for a given device in bulk (full-replace per device).
+   * Each mapping: deviceCode → catalogTestId.
+   */
+  async saveCatalogDeviceMappingsBulk(dto: {
+    deviceId: string;
+    mappings: { deviceCode: string; catalogTestId: string }[];
+  }) {
+    const trimmedDeviceId = dto.deviceId.trim();
+    if (!trimmedDeviceId) throw new BadRequestException('deviceId is required');
+    if (!dto.mappings.length) throw new BadRequestException('mappings cannot be empty');
+
+    // Validate all catalogTestIds exist and are active
+    const catalogIds = dto.mappings.map((m) => m.catalogTestId);
+    const tests = await this.prisma.catalogTest.findMany({
+      where: { id: { in: catalogIds } },
+      select: { id: true, isActive: true },
+    });
+    const validActiveIds = new Set(tests.filter((t) => t.isActive).map((t) => t.id));
+    const invalid = catalogIds.filter((id) => !validActiveIds.has(id));
+    if (invalid.length) throw new BadRequestException(`Invalid/inactive catalogTestId(s): ${invalid.join(', ')}`);
+
+    // Deduplicate device codes (case-insensitive)
+    const seenCodes = new Set<string>();
+    for (const m of dto.mappings) {
+      const key = m.deviceCode.trim().toLowerCase();
+      if (seenCodes.has(key)) throw new BadRequestException(`Duplicate deviceCode "${m.deviceCode.trim()}"`);
+      seenCodes.add(key);
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      // Delete all existing catalog mappings for this device
+      await tx.catalogDeviceMapping.deleteMany({
+        where: { deviceId: { equals: trimmedDeviceId, mode: 'insensitive' as const } },
+      });
+      // Insert new set
+      await tx.catalogDeviceMapping.createMany({
+        data: dto.mappings.map((m) => ({
+          deviceId: trimmedDeviceId,
+          deviceCode: m.deviceCode.trim(),
+          catalogTestId: m.catalogTestId,
+          isActive: true,
+        })),
+        skipDuplicates: true,
+      });
+    });
+
+    return this.listCatalogDeviceMappings({ deviceId: trimmedDeviceId });
+  }
+
+  /** Delete a single catalog device mapping by ID. */
+  async deleteCatalogDeviceMapping(id: string) {
+    const existing = await this.prisma.catalogDeviceMapping.findUnique({ where: { id } });
+    if (!existing) throw new NotFoundException('Catalog device mapping not found');
+    return this.prisma.catalogDeviceMapping.delete({ where: { id } });
+  }
+
+  /**
+   * List all unique device IDs that appear in catalog-level mappings.
+   * Used to populate the device selector in the platform UI.
+   */
+  async listCatalogDeviceIds() {
+    const rows = await this.prisma.catalogDeviceMapping.findMany({
+      distinct: ['deviceId'],
+      select: { deviceId: true },
+      orderBy: { deviceId: 'asc' },
+    });
+    return rows.map((r) => r.deviceId);
+  }
+
+  // ── Migration: promote lab mappings → catalog level ────────────────────────
+
+  /**
+   * Dry-run: identify lab-level device mappings that have a consistent target
+   * catalog test across all labs (same deviceCode always maps to the same catalogTest).
+   * These are candidates for promotion to catalog level.
+   */
+  async migrationPromoteMappingsReport() {
+    return this.prisma.withoutTenant(async () => {
+      const labMappings = await this.prisma.deviceTestMapping.findMany({
+        select: {
+          deviceId: true,
+          deviceCode: true,
+          labService: { select: { catalogTestId: true, code: true } },
+        },
+      });
+
+      // Group by deviceId + deviceCode
+      const groups = new Map<string, Set<string | null>>();
+      for (const m of labMappings) {
+        const key = `${m.deviceId.trim().toLowerCase()}|${m.deviceCode.trim().toLowerCase()}`;
+        if (!groups.has(key)) groups.set(key, new Set());
+        groups.get(key)!.add(m.labService.catalogTestId);
+      }
+
+      const candidates: { deviceId: string; deviceCode: string; catalogTestId: string }[] = [];
+      const conflicts: { deviceId: string; deviceCode: string; catalogTestIds: (string | null)[] }[] = [];
+
+      for (const [key, catalogIds] of groups) {
+        const [deviceId, deviceCode] = key.split('|');
+        if (catalogIds.size === 1) {
+          const [cid] = [...catalogIds];
+          if (cid) candidates.push({ deviceId, deviceCode, catalogTestId: cid });
+        } else {
+          conflicts.push({ deviceId, deviceCode, catalogTestIds: [...catalogIds] });
+        }
+      }
+
+      // Check which candidates don't already exist in catalog mappings
+      const existingKeys = new Set(
+        (await this.prisma.catalogDeviceMapping.findMany({ select: { deviceId: true, deviceCode: true } }))
+          .map((r) => `${r.deviceId.toLowerCase()}|${r.deviceCode.toLowerCase()}`),
+      );
+
+      const newCandidates = candidates.filter(
+        (c) => !existingKeys.has(`${c.deviceId.toLowerCase()}|${c.deviceCode.toLowerCase()}`),
+      );
+
+      return {
+        totalLabMappings: labMappings.length,
+        candidatesForPromotion: newCandidates.length,
+        conflictsCount: conflicts.length,
+        candidates: newCandidates,
+        conflicts: conflicts.slice(0, 20),
+      };
+    });
+  }
+
+  /**
+   * Execute: promote consistent lab-level mappings to catalog level.
+   * Only promotes where all labs agree on the same catalogTestId for a given device+code.
+   * Idempotent — skips entries that already exist at catalog level.
+   */
+  async migrationPromoteMappingsExecute() {
+    const report = await this.migrationPromoteMappingsReport();
+
+    if (!report.candidates.length) {
+      return { promoted: 0, skipped: 0, conflictsNotPromoted: report.conflictsCount };
+    }
+
+    await this.prisma.catalogDeviceMapping.createMany({
+      data: report.candidates.map((c) => ({
+        deviceId: c.deviceId,
+        deviceCode: c.deviceCode,
+        catalogTestId: c.catalogTestId,
+        isActive: true,
+      })),
+      skipDuplicates: true,
+    });
+
+    return {
+      promoted: report.candidates.length,
+      skipped: 0,
+      conflictsNotPromoted: report.conflictsCount,
+    };
   }
 }

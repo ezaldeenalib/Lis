@@ -13,7 +13,9 @@ import {
   ArrowLeft,
   TrendingUp,
   FileText,
+  Sparkles,
 } from 'lucide-react';
+import { NewOrderWizard } from '@/components/orders/new-order-wizard';
 import { useAuthStore } from '@/stores/auth.store';
 import { useListViewStore } from '@/stores/list-view.store';
 import { usePermission } from '@/hooks/use-permission';
@@ -107,7 +109,6 @@ const PRIORITY_CLASS: Record<string, string> = {
 };
 
 const QUICK_ACTIONS = [
-  { href: '/orders', label: 'طلب جديد', desc: 'إنشاء طلب تحاليل', icon: ClipboardList, color: 'text-primary bg-primary/10 hover:bg-primary/20' },
   { href: '/patients', label: 'تسجيل مريض', desc: 'إضافة سجل مريض', icon: Users, color: 'text-teal-600 bg-teal-50 hover:bg-teal-100 dark:text-teal-400 dark:bg-teal-950 dark:hover:bg-teal-900' },
   { href: '/results', label: 'إدخال نتيجة', desc: 'تسجيل نتائج الفحص', icon: FlaskConical, color: 'text-amber-600 bg-amber-50 hover:bg-amber-100 dark:text-amber-400 dark:bg-amber-950 dark:hover:bg-amber-900' },
   { href: '/samples', label: 'استلام عينة', desc: 'تأكيد وصول العينة', icon: TestTube, color: 'text-emerald-600 bg-emerald-50 hover:bg-emerald-100 dark:text-emerald-400 dark:bg-emerald-950 dark:hover:bg-emerald-900' },
@@ -136,8 +137,10 @@ export default function DashboardPage() {
   const qc = useQueryClient();
   const { hasPermission } = usePermission();
   const canSendWhatsApp = hasPermission('send:whatsapp');
+  const canCreateOrder = hasPermission('create:order');
 
   const [waOpen, setWaOpen] = useState(false);
+  const [smartOrderOpen, setSmartOrderOpen] = useState(false);
   const [waPhone, setWaPhone] = useState('');
   const [waMessage, setWaMessage] = useState('');
   const [waTarget, setWaTarget] = useState<{
@@ -223,6 +226,40 @@ export default function DashboardPage() {
 
       {/* Quick actions */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {canCreateOrder ? (
+          <button
+            type="button"
+            onClick={() => setSmartOrderOpen(true)}
+            className={cn(
+              'flex flex-col gap-2.5 rounded-xl border border-border bg-card p-4 text-start transition-all duration-150 card-hover',
+              'text-primary bg-primary/10 hover:bg-primary/20 ring-1 ring-primary/15',
+            )}
+          >
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/50 dark:bg-black/20">
+              <Sparkles className="h-4 w-4 shrink-0" />
+            </div>
+            <div>
+              <p className="text-sm font-bold leading-tight">طلب جديد (ذكي)</p>
+              <p className="text-[11px] opacity-80 mt-0.5">معالج سريع — بدون إعادة تحميل</p>
+            </div>
+          </button>
+        ) : (
+          <Link
+            href="/orders"
+            className={cn(
+              'flex flex-col gap-2.5 rounded-xl border border-border bg-card p-4 transition-all duration-150 card-hover',
+              'text-muted-foreground bg-muted/30 hover:bg-muted/50',
+            )}
+          >
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/50 dark:bg-black/20">
+              <ClipboardList className="h-4 w-4 shrink-0" />
+            </div>
+            <div>
+              <p className="text-sm font-bold leading-tight">الطلبات</p>
+              <p className="text-[11px] opacity-70 mt-0.5">عرض الطلبات</p>
+            </div>
+          </Link>
+        )}
         {QUICK_ACTIONS.map(({ href, label, desc, icon: Icon, color }) => (
           <Link
             key={href}
@@ -233,7 +270,7 @@ export default function DashboardPage() {
             )}
           >
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/50 dark:bg-black/20">
-              <Icon className="h-4.5 w-4.5 shrink-0" />
+              <Icon className="h-4 w-4 shrink-0" />
             </div>
             <div>
               <p className="text-sm font-bold leading-tight">{label}</p>
@@ -503,6 +540,16 @@ export default function DashboardPage() {
           </div>
         )}
       </div>
+
+      <NewOrderWizard
+        open={smartOrderOpen}
+        onOpenChange={setSmartOrderOpen}
+        onCreated={() => {
+          qc.invalidateQueries({ queryKey: ['dashboard', 'stats'] });
+          qc.invalidateQueries({ queryKey: ['dashboard', 'recent-orders'] });
+          qc.invalidateQueries({ queryKey: ['orders'] });
+        }}
+      />
 
       <Dialog open={waOpen} onOpenChange={setWaOpen}>
         <DialogContent className="max-w-lg">

@@ -57,7 +57,9 @@ export default function PlatformDeviceMappingsPage() {
   const { data: servicesData } = useQuery<{ data: LabService[] }>({
     queryKey: ['platform-lab-services-for-mapping', selectedLabId],
     queryFn: () =>
-      api.get<{ data: LabService[] }>(`/api/v1/lab-services?limit=300`),
+      api.get<{ data: LabService[] }>(
+        `/platform/lab-services?laboratoryId=${encodeURIComponent(selectedLabId)}&limit=300`,
+      ),
     enabled: !!selectedLabId,
     staleTime: 30_000,
   });

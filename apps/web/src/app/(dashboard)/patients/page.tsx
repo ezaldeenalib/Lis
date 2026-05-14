@@ -17,6 +17,7 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from '@/components/ui/dialog';
@@ -76,6 +77,22 @@ const AVATAR_COLORS = [
 
 function getAvatarColor(name: string) {
   return AVATAR_COLORS[name.charCodeAt(0) % AVATAR_COLORS.length];
+}
+
+/** شريط لوني يطابق مجموعات الطلبات — يعطي تمييزاً بصرياً ثابتاً لكل مريض */
+const PATIENT_CARD_ACCENTS = [
+  'border-s-violet-500/70',
+  'border-s-teal-500/70',
+  'border-s-sky-500/70',
+  'border-s-amber-500/70',
+  'border-s-rose-500/70',
+  'border-s-emerald-500/70',
+] as const;
+
+function patientCardAccent(patientId: string): string {
+  let h = 0;
+  for (let i = 0; i < patientId.length; i++) h = Math.imul(31, h) + patientId.charCodeAt(i);
+  return PATIENT_CARD_ACCENTS[Math.abs(h) % PATIENT_CARD_ACCENTS.length];
 }
 
 function calcAge(dob: string | null) {
@@ -314,15 +331,25 @@ export default function PatientsPage() {
           ) : (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {[1, 2, 3, 4, 5, 6].map((i) => (
-                <div key={i} className="rounded-xl border border-border bg-card p-5 space-y-4">
-                  <div className="flex items-center gap-3">
-                    <Skeleton className="h-11 w-11 rounded-full" />
-                    <div className="space-y-1.5 flex-1">
-                      <Skeleton className="h-4 w-32" />
-                      <Skeleton className="h-3 w-20" />
+                <div
+                  key={i}
+                  className="rounded-xl border border-border bg-card shadow-card overflow-hidden ring-1 ring-border/60 flex flex-col"
+                >
+                  <div className="flex items-start gap-3 px-4 py-3.5 border-b border-border bg-muted/30">
+                    <Skeleton className="h-11 w-11 rounded-xl shrink-0" />
+                    <div className="space-y-2 flex-1 pt-0.5">
+                      <Skeleton className="h-4 w-36" />
+                      <Skeleton className="h-5 w-28 rounded-md" />
                     </div>
                   </div>
-                  <Skeleton className="h-16 w-full rounded-lg" />
+                  <div className="p-3 space-y-2 bg-muted/10 flex-1">
+                    <Skeleton className="h-9 w-full rounded-lg" />
+                    <Skeleton className="h-9 w-full rounded-lg" />
+                  </div>
+                  <div className="border-t border-border px-3 py-2 bg-muted/25 flex justify-between">
+                    <Skeleton className="h-3 w-24" />
+                    <Skeleton className="h-7 w-16 rounded-md" />
+                  </div>
                 </div>
               ))}
             </div>
@@ -369,11 +396,11 @@ export default function PatientsPage() {
                   const age = calcAge(p.dateOfBirth);
                   const initials = `${p.firstName[0]}${p.lastName[0]}`.toUpperCase();
                   return (
-                    <TableRow key={p.id} className="group">
+                    <TableRow key={p.id} className="group border-s-[3px] border-s-transparent hover:border-s-primary/40 transition-colors">
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <div className={cn(
-                            'flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br text-xs font-bold text-white',
+                            'flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br text-[11px] font-bold text-white shadow-sm ring-1 ring-border/40',
                             getAvatarColor(p.firstName)
                           )}>
                             {initials}
@@ -454,80 +481,136 @@ export default function PatientsPage() {
             {patients.map((p) => {
               const age = calcAge(p.dateOfBirth);
               const initials = `${p.firstName[0]}${p.lastName[0]}`.toUpperCase();
+              const accent = patientCardAccent(p.id);
               return (
-                <div key={p.id} className="group rounded-xl border border-border bg-card p-5 shadow-card card-hover flex flex-col gap-4">
-                  <div className="flex items-start gap-3">
-                    <div className={cn(
-                      'flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br text-sm font-bold text-white',
-                      getAvatarColor(p.firstName)
-                    )}>
+                <div
+                  key={p.id}
+                  className={cn(
+                    'group flex flex-col overflow-hidden rounded-xl border border-border bg-card shadow-card',
+                    'ring-1 ring-border/60 card-hover',
+                  )}
+                >
+                  {/* رأس الكارت — نفس فكرة مجموعة المريض في صفحة الطلبات */}
+                  <div
+                    className={cn(
+                      'relative flex items-start gap-3 border-b border-border px-4 py-3.5',
+                      'bg-gradient-to-l from-primary/[0.06] via-muted/30 to-muted/20',
+                      'border-s-[4px]',
+                      accent,
+                    )}
+                  >
+                    <div
+                      className={cn(
+                        'flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br text-sm font-bold text-white shadow-sm ring-2 ring-background/80',
+                        getAvatarColor(p.firstName),
+                      )}
+                    >
                       {initials}
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-bold text-foreground truncate leading-tight">
+                    <div className="min-w-0 flex-1 pt-0.5">
+                      <p className="truncate font-bold text-foreground leading-tight">
                         {p.firstName} {p.lastName}
                       </p>
-                      <p className="text-xs font-mono text-primary/80 mt-0.5 ltr-isolate">{p.mrn}</p>
-                    </div>
-                    {(canUpdate || canDelete) && (
-                      <div className="flex shrink-0 gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        {canUpdate && (
-                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(p)}>
-                            <Pencil className="h-3.5 w-3.5" />
-                          </Button>
+                      <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                        <code className="rounded-md border border-border/80 bg-background/90 px-1.5 py-0.5 font-mono text-[11px] text-muted-foreground ltr-isolate shadow-sm">
+                          {p.mrn}
+                        </code>
+                        {p.gender && (
+                          <Badge variant="secondary" className="h-5 gap-1 px-1.5 text-[10px] font-semibold">
+                            <span aria-hidden>{GENDER_ICON[p.gender]}</span>
+                            {GENDER_LABEL[p.gender] ?? p.gender}
+                            {age !== null && (
+                              <span className="font-normal text-muted-foreground">· {age} سنة</span>
+                            )}
+                          </Badge>
                         )}
-                        {canDelete && (
-                          <Button
-                            variant="ghost" size="icon"
-                            className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
-                            onClick={() => setDeletePatient(p)}
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
+                        {!p.gender && age !== null && (
+                          <Badge variant="outline" className="h-5 px-1.5 text-[10px] text-muted-foreground">
+                            {age} سنة
+                          </Badge>
                         )}
                       </div>
-                    )}
+                    </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2">
-                    {p.gender && (
-                      <div className="flex items-center gap-1.5 rounded-lg bg-muted/50 px-2.5 py-1.5 col-span-2">
-                        <User className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                        <span className="text-xs font-medium text-foreground">
-                          {GENDER_ICON[p.gender]} {GENDER_LABEL[p.gender] ?? p.gender}
-                          {age !== null && <span className="text-muted-foreground"> · {age} سنة</span>}
-                        </span>
-                      </div>
-                    )}
+                  {/* تفاصيل — بطاقات فرعية مثل كروت الطلبات الداخلية */}
+                  <div className="flex flex-1 flex-col gap-2 bg-muted/10 p-3">
                     {p.phone && (
-                      <div className="flex items-center gap-1.5 rounded-lg bg-muted/50 px-2.5 py-1.5">
-                        <Phone className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                        <span className="text-xs font-medium text-foreground truncate ltr-isolate">{p.phone}</span>
+                      <div className="flex items-center gap-2 rounded-lg border border-border bg-background px-2.5 py-2 shadow-sm">
+                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
+                          <Phone className="h-3.5 w-3.5" />
+                        </div>
+                        <span className="min-w-0 truncate text-xs font-medium text-foreground ltr-isolate">{p.phone}</span>
                       </div>
                     )}
                     {p.nationalId && (
-                      <div className="flex items-center gap-1.5 rounded-lg bg-muted/50 px-2.5 py-1.5">
-                        <CreditCard className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                        <span className="text-xs font-mono text-muted-foreground truncate ltr-isolate">{p.nationalId}</span>
+                      <div className="flex items-center gap-2 rounded-lg border border-border bg-background px-2.5 py-2 shadow-sm">
+                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
+                          <CreditCard className="h-3.5 w-3.5" />
+                        </div>
+                        <span className="min-w-0 truncate font-mono text-xs text-muted-foreground ltr-isolate">{p.nationalId}</span>
                       </div>
                     )}
                     {p.email && (
-                      <div className="flex items-center gap-1.5 rounded-lg bg-muted/50 px-2.5 py-1.5 col-span-2">
-                        <Mail className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                        <span className="text-xs text-muted-foreground truncate ltr-isolate">{p.email}</span>
+                      <div className="flex items-center gap-2 rounded-lg border border-border bg-background px-2.5 py-2 shadow-sm">
+                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
+                          <Mail className="h-3.5 w-3.5" />
+                        </div>
+                        <span className="min-w-0 truncate text-xs text-muted-foreground ltr-isolate">{p.email}</span>
                       </div>
                     )}
                     {p.address && (
-                      <div className="flex items-center gap-1.5 rounded-lg bg-muted/50 px-2.5 py-1.5 col-span-2">
-                        <MapPin className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                        <span className="text-xs text-muted-foreground truncate">{p.address}</span>
+                      <div className="flex items-start gap-2 rounded-lg border border-border bg-background px-2.5 py-2 shadow-sm">
+                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
+                          <MapPin className="h-3.5 w-3.5" />
+                        </div>
+                        <span className="line-clamp-2 text-xs leading-relaxed text-muted-foreground">{p.address}</span>
                       </div>
+                    )}
+                    {!p.phone && !p.nationalId && !p.email && !p.address && (
+                      <p className="rounded-lg border border-dashed border-border/80 bg-background/50 px-3 py-4 text-center text-xs text-muted-foreground">
+                        لا توجد بيانات تواصل إضافية
+                      </p>
                     )}
                   </div>
 
-                  <div className="flex items-center gap-1 border-t border-border pt-3 text-[11px] text-muted-foreground mt-auto">
-                    <Calendar className="h-3 w-3 shrink-0" />
-                    <span>سُجّل في {formatDate(p.createdAt)}</span>
+                  {/* شريط سفلي — تاريخ + إجراءات (مثل شريط الطلبات) */}
+                  <div className="flex items-center justify-between gap-2 border-t border-border bg-muted/25 px-3 py-2">
+                    <div className="flex min-w-0 items-center gap-1.5 text-[11px] text-muted-foreground">
+                      <Calendar className="h-3.5 w-3.5 shrink-0 opacity-70" />
+                      <span className="truncate">سُجّل {formatDate(p.createdAt)}</span>
+                    </div>
+                    {(canUpdate || canDelete) && (
+                      <div className="flex shrink-0 items-center gap-0.5 sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100">
+                        {canUpdate && (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button variant="ghost" size="sm" className="h-8 gap-1 px-2 text-primary" onClick={() => openEdit(p)}>
+                                <Pencil className="h-3.5 w-3.5" />
+                                <span className="text-xs font-semibold sm:inline">تعديل</span>
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>تعديل بيانات المريض</TooltipContent>
+                          </Tooltip>
+                        )}
+                        {canDelete && (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 gap-1 px-2 text-destructive hover:bg-destructive/10"
+                                onClick={() => setDeletePatient(p)}
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                                <span className="text-xs font-semibold sm:inline">حذف</span>
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>حذف المريض</TooltipContent>
+                          </Tooltip>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               );

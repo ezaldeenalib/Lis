@@ -304,9 +304,36 @@ model CatalogTest {
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
-  labServices  LabService[]
+  labServices         LabService[]
+  catalogDeviceMaps   CatalogDeviceMapping[]
 
   @@map("catalog_tests")
+}
+
+// ============================================================
+// CATALOG DEVICE MAPPINGS (Platform-controlled global layer)
+// Maps a device analyte code to a global catalog test.
+// Labs automatically inherit these; no per-lab reconfiguration needed.
+// A lab-level DeviceTestMapping for the same key overrides this entry.
+// ============================================================
+
+model CatalogDeviceMapping {
+  id            String   @id @default(uuid())
+  catalogTestId String   @map("catalog_test_id")
+  /// Logical device identifier used by the helper app (e.g. "XP-300")
+  deviceId      String   @map("device_id")
+  /// Analyte code sent by the device (e.g. "WBC")
+  deviceCode    String   @map("device_code")
+  isActive      Boolean  @default(true) @map("is_active")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  catalogTest CatalogTest @relation(fields: [catalogTestId], references: [id], onDelete: Cascade)
+
+  @@unique([deviceId, deviceCode])
+  @@index([catalogTestId])
+  @@index([deviceId])
+  @@map("catalog_device_mappings")
 }
 
 // ============================================================

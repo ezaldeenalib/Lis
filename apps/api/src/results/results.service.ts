@@ -395,18 +395,50 @@ export class ResultsService {
     }
     const sampleId = sample[0].id;
 
-    // 2. Find device mapping for this lab
-    const mapping = await this.prisma.$queryRaw<{ lab_service_id: string }[]>`
+    // 2. Resolve device code → lab service using two-tier lookup.
+    //    Tier 1: lab-specific override in device_test_mappings.
+    //    Tier 2: catalog-level mapping in catalog_device_mappings + lab_services.
+    let labServiceId: string;
+
+    const labMapping = await this.prisma.$queryRaw<{ lab_service_id: string }[]>`
       SELECT lab_service_id FROM device_test_mappings
       WHERE laboratory_id = ${laboratoryId}
         AND LOWER(TRIM(device_id))    = LOWER(TRIM(${deviceId}))
         AND LOWER(TRIM(device_code))  = LOWER(TRIM(${deviceCode}))
       LIMIT 1
     `;
-    if (!mapping.length) {
-      throw new Error(`No mapping found for device "${deviceId}" code "${deviceCode}"`);
+
+    if (labMapping.length) {
+      labServiceId = labMapping[0].lab_service_id;
+    } else {
+      // Tier 2: catalog-level mapping → resolve to this lab's lab_service
+      const catalogMapping = await this.prisma.$queryRaw<{ catalog_test_id: string }[]>`
+        SELECT catalog_test_id FROM catalog_device_mappings
+        WHERE is_active = true
+          AND LOWER(TRIM(device_id))   = LOWER(TRIM(${deviceId}))
+          AND LOWER(TRIM(device_code)) = LOWER(TRIM(${deviceCode}))
+        LIMIT 1
+      `;
+      if (!catalogMapping.length) {
+        throw new Error(`No mapping found for device "${deviceId}" code "${deviceCode}"`);
+      }
+      const catalogTestId = catalogMapping[0].catalog_test_id;
+
+      // Find the lab_service for this lab that is linked to this catalog test
+      const labService = await this.prisma.$queryRaw<{ id: string }[]>`
+        SELECT id FROM lab_services
+        WHERE laboratory_id   = ${laboratoryId}
+          AND catalog_test_id = ${catalogTestId}
+          AND is_active       = true
+        LIMIT 1
+      `;
+      if (!labService.length) {
+        throw new Error(
+          `Device "${deviceId}" code "${deviceCode}" maps to a catalog test that is not activated for this laboratory`,
+        );
+      }
+      labServiceId = labService[0].id;
     }
-    const labServiceId = mapping[0].lab_service_id;
 
     // 3. Find the SampleTest row
     const sampleTest = await this.prisma.$queryRaw<{ id: string }[]>`

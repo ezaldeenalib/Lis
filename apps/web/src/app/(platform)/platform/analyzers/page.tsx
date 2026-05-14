@@ -81,13 +81,14 @@ export default function PlatformAnalyzersPage() {
       )
     : allAnalyzers;
 
+  const linkLabId = linkDialog?.laboratory?.id;
   const { data: servicesData } = useQuery<{ data: LabService[] }>({
-    queryKey: ['platform-lab-services', linkDialog?.laboratory?.id],
+    queryKey: ['platform-lab-services', linkLabId],
     queryFn: () =>
       api.get<{ data: LabService[] }>(
-        `/api/v1/lab-services?limit=300`,
+        `/platform/lab-services?laboratoryId=${encodeURIComponent(linkLabId!)}&limit=300`,
       ),
-    enabled: !!linkDialog,
+    enabled: !!linkLabId,
     staleTime: 30_000,
   });
   const labServices = servicesData?.data ?? [];
