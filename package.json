@@ -5,7 +5,7 @@
   "description": "LIS SaaS Platform - Laboratory Information System",
   "scripts": {
     "dev:api": "nest build && node dist/apps/api/main.js",
-    "dev:web": "node node_modules/next/dist/bin/next dev apps/web",
+    "dev:web": "node node_modules/next/dist/bin/next dev apps/web -H 0.0.0.0",
     "build:shared": "tsc -p libs/shared/tsconfig.json",
     "build:api": "nest build",
     "build:web": "next build apps/web",

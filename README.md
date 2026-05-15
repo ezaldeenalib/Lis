@@ -120,6 +120,42 @@ npm run dev:web
 - **Web App**: http://localhost:3000
 - **API Docs (Swagger)**: http://localhost:4000/docs
 
+### الوصول عبر IP عام (مثال: `142.132.189.60`)
+
+1. في ملف `.env` (انظر `.env.example`):
+
+```env
+PUBLIC_HOST=142.132.189.60
+WEB_URL=http://142.132.189.60:3000
+NEXT_PUBLIC_API_URL=http://142.132.189.60:4000
+API_HOST=0.0.0.0
+CORS_ORIGINS=http://142.132.189.60:3000,http://localhost:3000
+```
+
+2. افتح في جدار الحماية (Windows Firewall / السحابة) المنافذ **3000** (واجهة) و **4000** (API).
+
+3. شغّل الخدمات:
+
+```bash
+npm run dev:api
+npm run dev:web
+```
+
+4. من أي جهاز على الشبكة:
+
+- **التطبيق**: http://142.132.189.60:3000  
+- **Swagger**: http://142.132.189.60:4000/docs  
+
+**Docker (نفس الـ IP):**
+
+```bash
+docker-compose up -d --build
+```
+
+يُقرأ `PUBLIC_HOST` و`NEXT_PUBLIC_API_URL` من `.env`. داخل Docker يستخدم الخادم `API_INTERNAL_URL=http://api:4000` لإعادة التوجيه، بينما المتصفح يتصل بـ `NEXT_PUBLIC_API_URL` على الـ IP العام.
+
+> **ملاحظة:** غيّر `JWT_SECRET` في الإنتاج. لـ HTTPS استخدم nginx/Caddy أمام التطبيق وحدّث `WEB_URL` / `NEXT_PUBLIC_API_URL` إلى `https://...`.
+
 ## Demo Credentials
 
 | Role | Email | Password |
@@ -182,5 +218,11 @@ Copy `.env.example` to `.env` and configure:
 | JWT_EXPIRATION | Token expiry | 24h |
 | API_PORT | API server port | 4000 |
 | WEB_PORT | Web server port | 3000 |
+| PUBLIC_HOST | Public IP or domain shown in API logs | — |
+| WEB_URL | Frontend origin (CORS) | http://localhost:3000 |
+| NEXT_PUBLIC_API_URL | API URL used by the browser | http://localhost:4000 |
+| API_HOST | API bind address (`0.0.0.0` = all interfaces) | 0.0.0.0 |
+| CORS_ORIGINS | Extra CORS origins (comma-separated) | — |
+| API_INTERNAL_URL | Docker: internal API for Next rewrites | http://api:4000 |
 | NODE_ENV | `development` or `production` | development |
 | DATABASE_ENV | `development` \| `staging` \| `production` — gates dev-only migration edits | development |

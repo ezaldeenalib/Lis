@@ -3,14 +3,16 @@ import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { IoAdapter } from '@nestjs/platform-socket.io';
 import { AppModule } from './app.module';
+import { resolveCorsOrigins } from './cors-origins';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   app.useWebSocketAdapter(new IoAdapter(app));
 
+  const corsOrigins = resolveCorsOrigins();
   app.enableCors({
-    origin: process.env.WEB_URL || 'http://localhost:3000',
+    origin: corsOrigins,
     credentials: true,
   });
 
@@ -31,9 +33,15 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('docs', app, document);
 
-  const port = process.env.API_PORT || 4000;
-  await app.listen(port);
-  console.log(`🔬 LIS API running on http://localhost:${port}`);
-  console.log(`📚 Swagger docs at http://localhost:${port}/docs`);
+  const port = Number(process.env.API_PORT) || 4000;
+  const host = process.env.API_HOST || '0.0.0.0';
+  await app.listen(port, host);
+
+  const publicHost = process.env.PUBLIC_HOST?.trim();
+  const displayHost = publicHost || (host === '0.0.0.0' ? 'localhost' : host);
+  console.log(`🔬 LIS API listening on ${host}:${port}`);
+  console.log(`   → http://${displayHost}:${port}`);
+  console.log(`📚 Swagger: http://${displayHost}:${port}/docs`);
+  console.log(`   CORS: ${Array.isArray(corsOrigins) ? corsOrigins.join(', ') : corsOrigins}`);
 }
 bootstrap();

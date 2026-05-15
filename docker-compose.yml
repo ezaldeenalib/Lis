@@ -40,7 +40,7 @@ services:
     container_name: lis_api
     restart: unless-stopped
     ports:
-      - '4000:4000'
+      - '${API_PORT:-4000}:4000'
     environment:
       DATABASE_URL: postgresql://lis_user:lis_password@postgres:5432/lis_db?schema=public
       REDIS_HOST: redis
@@ -48,6 +48,10 @@ services:
       JWT_SECRET: ${JWT_SECRET:-dev-secret-key-change-in-production}
       JWT_EXPIRATION: 24h
       API_PORT: 4000
+      API_HOST: 0.0.0.0
+      PUBLIC_HOST: ${PUBLIC_HOST:-142.132.189.60}
+      WEB_URL: ${WEB_URL:-http://142.132.189.60:3000}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://142.132.189.60:3000}
       NODE_ENV: production
       # Prisma: set RUN_MIGRATIONS_ON_BOOT=0 if you run `npm run db:deploy` in a separate Job.
       RUN_MIGRATIONS_ON_BOOT: ${RUN_MIGRATIONS_ON_BOOT:-1}
@@ -79,12 +83,16 @@ services:
     build:
       context: .
       dockerfile: apps/web/Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://142.132.189.60:4000}
     container_name: lis_web
     restart: unless-stopped
     ports:
-      - '3000:3000'
+      - '${WEB_PORT:-3000}:3000'
     environment:
-      NEXT_PUBLIC_API_URL: http://api:4000
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://142.132.189.60:4000}
+      API_INTERNAL_URL: http://api:4000
+      HOSTNAME: 0.0.0.0
       NODE_ENV: production
     depends_on:
       api:

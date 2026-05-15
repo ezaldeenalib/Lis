@@ -1,6 +1,14 @@
 import { clearReactQueryCache } from '@/lib/react-query-registry';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+/** Browser: same-origin + Next rewrites when unset. SSR/server: internal URL. */
+function resolveApiBase(): string {
+  const configured = process.env.NEXT_PUBLIC_API_URL?.trim();
+  if (configured) return configured.replace(/\/$/, '');
+  if (typeof window !== 'undefined') return '';
+  return (process.env.API_INTERNAL_URL || 'http://localhost:4000').replace(/\/$/, '');
+}
+
+const API_BASE = resolveApiBase();
 
 class ApiClient {
   private token: string | null = null;
