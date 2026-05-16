@@ -18,6 +18,11 @@ const nextConfig = {
         source: '/platform/:path*',
         destination: `${base}/platform/:path*`,
       },
+      // Socket.IO (Engine.IO) — lets clients use same-origin in dev if NEXT_PUBLIC_API_URL is unset
+      {
+        source: '/socket.io/:path*',
+        destination: `${base}/socket.io/:path*`,
+      },
     ];
   },
 };

@@ -311,6 +311,7 @@ export default function OrdersPage() {
   const canSendWhatsApp = hasPermission('send:whatsapp');
   const [page, setPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState<OrderStatus | 'ALL'>('ALL');
+
   const [dialogOpen, setDialogOpen] = useState(false);
   const [wizardOpen, setWizardOpen] = useState(false);
   const [orderMode, setOrderMode] = useState<'smart' | 'classic'>('smart');

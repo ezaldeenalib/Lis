@@ -29,6 +29,10 @@ import {
 import { useAuthStore } from '@/stores/auth.store';
 import { useListViewStore } from '@/stores/list-view.store';
 import { ListViewToggle } from '@/components/layout/list-view-toggle';
+import { RealtimeIndicator } from '@/components/realtime/realtime-indicator';
+import { RealtimeBridge } from '@/components/realtime/realtime-bridge';
+import { NotificationControls } from '@/components/realtime/notification-controls';
+import { useNotificationPreferencesStore } from '@/stores/notification-preferences.store';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
@@ -113,6 +117,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   useEffect(() => {
     if (!mounted) return;
     useListViewStore.getState().hydrateFromStorage();
+    useNotificationPreferencesStore.getState().hydrateFromStorage();
   }, [mounted]);
 
   useEffect(() => {
@@ -149,6 +154,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
 
   return (
+    <>
+      <RealtimeBridge />
     <div className="flex min-h-screen bg-background" suppressHydrationWarning>
       {/* Mobile overlay */}
       {sidebarOpen && (
@@ -274,6 +281,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
           {/* Right actions */}
           <div className="flex items-center gap-2" suppressHydrationWarning>
+            <RealtimeIndicator className="hidden sm:inline-flex" />
+            <NotificationControls />
+            <div className="hidden sm:block h-4 w-px bg-border" />
             <ListViewToggle />
             <Button
               variant="ghost"
@@ -300,5 +310,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </main>
       </div>
     </div>
+    </>
   );
 }

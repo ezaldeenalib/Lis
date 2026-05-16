@@ -1,10 +1,11 @@
-import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Logger, Optional } from '@nestjs/common';
 import { TenantPrismaService } from '../database/tenant-prisma.service';
 import { BarcodeService } from '../barcode/barcode.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { CurrentUserPayload } from '../auth/decorators/current-user.decorator';
 import { OrderPriority, OrderStatus, SampleType } from '@prisma/client';
 import { Prisma } from '@prisma/client';
+import { LisEventService } from '../realtime/lis-event.service';
 
 @Injectable()
 export class OrdersService {
@@ -13,6 +14,7 @@ export class OrdersService {
   constructor(
     private readonly prisma: TenantPrismaService,
     private readonly barcodeService: BarcodeService,
+    @Optional() private readonly events: LisEventService,
   ) {}
 
   async list(
@@ -123,7 +125,20 @@ export class OrdersService {
         });
       }
 
-      return this.findById(order.id);
+      const createdOrder = await this.findById(order.id);
+
+      // Emit real-time event AFTER all DB writes succeed
+      const patient = (createdOrder as { patient?: { firstName?: string; lastName?: string; mrn?: string } } | null)?.patient;
+      this.events?.orderCreated(labId, {
+        orderId:     order.id,
+        orderNumber: order.orderNumber,
+        patientName: patient ? `${patient.firstName ?? ''} ${patient.lastName ?? ''}`.trim() : '',
+        patientMrn:  patient?.mrn ?? '',
+        priority:    data.priority ?? OrderPriority.ROUTINE,
+        timestamp:   new Date().toISOString(),
+      });
+
+      return createdOrder;
     } catch (err) {
       if (err instanceof Prisma.PrismaClientKnownRequestError) {
         if (err.code === 'P2002') {

@@ -1,8 +1,9 @@
-import { Injectable, NotFoundException, Logger } from '@nestjs/common';
+import { Injectable, NotFoundException, Logger, Optional } from '@nestjs/common';
 import { TenantPrismaService } from '../database/tenant-prisma.service';
 import { CurrentUserPayload } from '../auth/decorators/current-user.decorator';
 import { Prisma, SampleTestStatus, SampleStatus, OrderStatus, ResultFlag, IngestionStatus } from '@prisma/client';
 import { IngestResultDto } from './dto/ingest-result.dto';
+import { LisEventService } from '../realtime/lis-event.service';
 
 /**
  * Auto-determine the result flag from a numeric value and a normal-range string.
@@ -79,7 +80,10 @@ export class ResultsService {
   private readonly logger = new Logger(ResultsService.name);
   private readonly resolveCache = new Map<string, CacheEntry>();
 
-  constructor(private prisma: TenantPrismaService) {}
+  constructor(
+    private prisma: TenantPrismaService,
+    @Optional() private readonly events: LisEventService,
+  ) {}
 
   getTenantId(): string | null {
     return this.prisma.getTenantId();
@@ -155,6 +159,8 @@ export class ResultsService {
     flag?: ResultFlag;
     notes?: string;
     laboratoryId?: string;
+    /** device that submitted this result (null = manual entry) */
+    deviceId?: string | null;
   }) {
     const tenantId = data.laboratoryId ?? this.prisma.getTenantId();
     const sampleTest = await this.prisma.sampleTest.findFirst({
@@ -201,6 +207,38 @@ export class ResultsService {
         data: { status: SampleTestStatus.RESULTED },
       }),
     ]);
+
+    // Emit real-time event AFTER successful DB commit
+    const labId = data.laboratoryId ?? this.prisma.getTenantId();
+    if (labId) {
+      // Fetch minimal context for the payload
+      const ctx = await this.prisma.sampleTest
+        .findUnique({
+          where: { id: data.sampleTestId },
+          select: {
+            labService: { select: { code: true, name: true } },
+            sample:     { select: { id: true, order: { select: { id: true, orderNumber: true } } } },
+          },
+        })
+        .catch(() => null);
+
+      if (ctx) {
+        this.events?.resultCreated(labId, {
+          orderId:        ctx.sample.order.id,
+          orderNumber:    ctx.sample.order.orderNumber,
+          sampleId:       ctx.sample.id,
+          sampleTestId:   data.sampleTestId,
+          labServiceCode: ctx.labService.code,
+          labServiceName: ctx.labService.name,
+          value:          data.value,
+          unit:           unit ?? null,
+          flag:           flag ?? null,
+          status:         'RESULTED',
+          timestamp:      new Date().toISOString(),
+          deviceId:       data.deviceId ?? null,
+        });
+      }
+    }
 
     return result;
   }
@@ -286,13 +324,51 @@ export class ResultsService {
       }
     });
 
-    return this.prisma.sampleTest.findUnique({
+    const finalTest = await this.prisma.sampleTest.findUnique({
       where: { id: sampleTestId },
       include: {
         result: { include: { validatedBy: true } },
         labService: true,
+        sample: { select: { id: true, order: { select: { id: true, orderNumber: true } } } },
       },
     });
+
+    // Emit validated event after successful commit
+    const labId = this.prisma.getTenantId();
+    if (labId && finalTest) {
+      this.events?.resultValidated(labId, {
+        orderId:        finalTest.sample.order.id,
+        orderNumber:    finalTest.sample.order.orderNumber,
+        sampleId:       finalTest.sample.id,
+        sampleTestId:   finalTest.id,
+        labServiceCode: finalTest.labService.code,
+        labServiceName: finalTest.labService.name,
+        value:          finalTest.result?.value ?? '',
+        unit:           finalTest.result?.unit ?? null,
+        flag:           finalTest.result?.flag ?? null,
+        status:         'VALIDATED',
+        timestamp:      new Date().toISOString(),
+        deviceId:       null,
+      });
+
+      // Also emit order.completed if the whole order just completed
+      const orderStatus = await this.prisma.order.findUnique({
+        where: { id: finalTest.sample.order.id },
+        select: { status: true, patient: { select: { firstName: true, lastName: true, mrn: true } } },
+      });
+      if (orderStatus?.status === OrderStatus.COMPLETED) {
+        this.events?.orderCompleted(labId, {
+          orderId:      finalTest.sample.order.id,
+          orderNumber:  finalTest.sample.order.orderNumber,
+          patientName:  `${orderStatus.patient.firstName} ${orderStatus.patient.lastName}`,
+          patientMrn:   orderStatus.patient.mrn,
+          status:       'COMPLETED',
+          timestamp:    new Date().toISOString(),
+        });
+      }
+    }
+
+    return finalTest;
   }
 
   async getValidationQueue(
@@ -492,6 +568,7 @@ export class ResultsService {
           flag: mapDeviceFlag(item.flag),
           notes: `Auto-ingested from device ${dto.deviceId}`,
           laboratoryId,
+          deviceId: dto.deviceId,
         });
 
         status = IngestionStatus.SUCCESS;
