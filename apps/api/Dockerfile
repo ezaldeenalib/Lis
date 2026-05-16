@@ -1,4 +1,6 @@
 FROM node:20-alpine AS base
+# Prisma needs OpenSSL at build (generate) and runtime (migrate deploy / queries).
+RUN apk add --no-cache openssl libc6-compat
 WORKDIR /app
 
 FROM base AS deps
