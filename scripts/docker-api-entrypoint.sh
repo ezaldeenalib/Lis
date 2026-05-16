@@ -1,7 +1,6 @@
 #!/bin/sh
-# API container bootstrap: optionally apply migrations, then start NestJS.
-#
-# Set RUN_MIGRATIONS_ON_BOOT=0 only if migrations run separately (e.g. K8s Job).
+# API container: optional migrations, then exec the runtime CMD (node dist/apps/api/main.js).
+# Do NOT run npm ci or npm install here.
 set -e
 
 SCHEMA="${PRISMA_SCHEMA_PATH:-libs/database/prisma/schema.prisma}"
@@ -13,4 +12,10 @@ else
   echo "[entrypoint] RUN_MIGRATIONS_ON_BOOT=0 — skipping migrate deploy."
 fi
 
-exec node dist/apps/api/src/main.js
+if [ "$#" -eq 0 ]; then
+  echo "[entrypoint] ERROR: no CMD defined. Expected: node dist/apps/api/main.js"
+  exit 1
+fi
+
+echo "[entrypoint] Starting API: $*"
+exec "$@"

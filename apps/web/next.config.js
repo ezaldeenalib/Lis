@@ -6,6 +6,7 @@ const apiProxyTarget =
 
 const nextConfig = {
   reactStrictMode: process.env.NODE_ENV === 'production',
+  output: 'standalone',
   transpilePackages: ['@lis/shared'],
   async rewrites() {
     const base = apiProxyTarget.replace(/\/$/, '');

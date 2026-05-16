@@ -39,6 +39,8 @@ services:
       dockerfile: apps/api/Dockerfile
     container_name: lis_api
     restart: unless-stopped
+    entrypoint: ['/usr/local/bin/docker-api-entrypoint.sh']
+    command: ['node', 'dist/apps/api/main.js']
     ports:
       - '${API_PORT:-4000}:4000'
     environment:
@@ -87,6 +89,7 @@ services:
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://142.132.189.60:4000}
     container_name: lis_web
     restart: unless-stopped
+    command: ['node', 'apps/web/server.js']
     ports:
       - '${WEB_PORT:-3000}:3000'
     environment:
