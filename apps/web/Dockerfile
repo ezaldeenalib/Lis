@@ -31,8 +31,14 @@ COPY libs/shared ./libs/shared
 # Next.js يتوقع مجلد public؛ CREATE إذا غير موجود ليجوز COPY من المرحلة runner
 RUN mkdir -p apps/web/public
 
-ARG NEXT_PUBLIC_API_URL=http://localhost:4000
+# Browser bundle (must be a hostname/IP the client can resolve — never http://api)
+ARG NEXT_PUBLIC_API_URL=http://142.132.189.60:4000
 ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+
+# Rewrite/proxy target baked into Next server (Docker DNS — not sent to browser)
+ARG API_INTERNAL_URL=http://api:4000
+ENV API_INTERNAL_URL=${API_INTERNAL_URL}
+
 ENV NEXT_TELEMETRY_DISABLED=1
 
 WORKDIR /app/apps/web

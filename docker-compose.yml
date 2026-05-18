@@ -1,15 +1,21 @@
 # =============================================================================
-# LIS SaaS — production Compose stack (PostgreSQL, Redis, API, Web)
+# LIS SaaS — production Compose (PostgreSQL, Redis, API, Web)
 # -----------------------------------------------------------------------------
-# Build : docker compose build --no-cache
+# Build : docker compose build --no-cache web api
 # Up    : docker compose up -d
 # Logs  : docker compose logs -f api web
 #
-# Health:
-#   curl -sf http://localhost:4000/api/v1/health/live
-#   curl -sf -o /dev/null http://localhost:3000/
+# Required in `.env` for remote access:
+#   NEXT_PUBLIC_API_URL=http://YOUR_PUBLIC_IP_OR_DOMAIN:4000   # browser + build
+#   DATABASE_URL=postgresql://USER:PASS@postgres:5432/DB?schema=public       # API container only
+#   WEB_URL / CORS_ORIGINS matching your public web origin
 #
-# Override secrets via `.env` in this directory (do not commit real secrets).
+# Never set NEXT_PUBLIC_* to http://api — browsers cannot resolve Docker DNS.
+# API_INTERNAL_URL=http://api:4000 is server-side rewrites only (build arg).
+#
+# Health:
+#   curl -sf http://127.0.0.1:4000/api/v1/health/live
+#   curl -sf -o /dev/null http://127.0.0.1:3000/
 # =============================================================================
 
 services:
@@ -31,8 +37,8 @@ services:
       test: ['CMD-SHELL', 'pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"']
       interval: 10s
       timeout: 5s
-      retries: 5
-      start_period: 10s
+      retries: 6
+      start_period: 15s
 
   redis:
     image: redis:7-alpine
@@ -49,8 +55,8 @@ services:
       test: ['CMD', 'redis-cli', 'ping']
       interval: 10s
       timeout: 5s
-      retries: 5
-      start_period: 5s
+      retries: 6
+      start_period: 10s
 
   api:
     build:
@@ -66,8 +72,8 @@ services:
     environment:
       NODE_ENV: production
       DATABASE_URL: ${DATABASE_URL:-postgresql://lis_user:lis_password@postgres:5432/lis_db?schema=public}
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
+      REDIS_HOST: ${REDIS_HOST:-redis}
+      REDIS_PORT: ${REDIS_PORT:-6379}
       JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
       JWT_EXPIRATION: ${JWT_EXPIRATION:-24h}
       API_PORT: 4000
@@ -77,6 +83,8 @@ services:
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
       RUN_MIGRATIONS_ON_BOOT: ${RUN_MIGRATIONS_ON_BOOT:-1}
       PRISMA_SCHEMA_PATH: libs/database/prisma/schema.prisma
+      MIGRATE_MAX_ATTEMPTS: ${MIGRATE_MAX_ATTEMPTS:-30}
+      MIGRATE_RETRY_SLEEP_SEC: ${MIGRATE_RETRY_SLEEP_SEC:-3}
       WHATSAPP_ENABLED: ${WHATSAPP_ENABLED:-1}
       WHATSAPP_AUTH_DATA_PATH: /var/lib/lis/whatsapp-auth
     volumes:
@@ -97,16 +105,17 @@ services:
           "require('http').get('http://127.0.0.1:4000/api/v1/health/live',(r)=>{r.resume();r.on('end',()=>process.exit(r.statusCode===200?0:1));}).on('error',()=>process.exit(1));",
         ]
       interval: 20s
-      timeout: 5s
-      retries: 5
-      start_period: 60s
+      timeout: 8s
+      retries: 6
+      start_period: 90s
 
   web:
     build:
       context: .
       dockerfile: apps/web/Dockerfile
       args:
-        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:4000}
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://142.132.189.60:4000}
+        API_INTERNAL_URL: ${API_INTERNAL_URL:-http://api:4000}
     image: lis-web:latest
     container_name: lis_web
     restart: unless-stopped
@@ -115,8 +124,6 @@ services:
       - '${WEB_PORT:-3000}:3000'
     environment:
       NODE_ENV: production
-      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:4000}
-      API_INTERNAL_URL: ${API_INTERNAL_URL:-http://api:4000}
       HOSTNAME: 0.0.0.0
       PORT: 3000
     networks:
@@ -133,13 +140,14 @@ services:
           "require('http').get('http://127.0.0.1:3000/',(r)=>{r.resume();r.on('end',()=>process.exit(r.statusCode&&r.statusCode<500?0:1));}).on('error',()=>process.exit(1));",
         ]
       interval: 25s
-      timeout: 5s
-      retries: 5
-      start_period: 90s
+      timeout: 8s
+      retries: 6
+      start_period: 120s
 
 networks:
   lis:
     driver: bridge
+    name: lis
 
 volumes:
   postgres_data:

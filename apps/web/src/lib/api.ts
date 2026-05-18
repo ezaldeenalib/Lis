@@ -1,9 +1,20 @@
 import { clearReactQueryCache } from '@/lib/react-query-registry';
+import { isDockerOnlyApiUrl } from '@/lib/docker-internal-hosts';
 
-/** Browser: same-origin + Next rewrites when unset. SSR/server: internal URL. */
+/** Browser: public URL or same-origin (never Docker service names). SSR: internal URL. */
 function resolveApiBase(): string {
   const configured = process.env.NEXT_PUBLIC_API_URL?.trim();
-  if (configured) return configured.replace(/\/$/, '');
+  if (configured) {
+    if (typeof window !== 'undefined' && isDockerOnlyApiUrl(configured)) {
+      if (process.env.NODE_ENV === 'development') {
+        console.warn(
+          '[LIS] NEXT_PUBLIC_API_URL must not use a Docker hostname in the browser; using same-origin /api.',
+        );
+      }
+      return '';
+    }
+    return configured.replace(/\/$/, '');
+  }
   if (typeof window !== 'undefined') return '';
   return (process.env.API_INTERNAL_URL || 'http://localhost:4000').replace(/\/$/, '');
 }

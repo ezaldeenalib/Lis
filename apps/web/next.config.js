@@ -1,6 +1,10 @@
 const path = require('path');
 
-/** @type {import('next').NextConfig} */
+/**
+ * Server-side rewrites (Next Node server → API). Evaluated at **build time**.
+ * - API_INTERNAL_URL: Docker bridge hostname (e.g. http://api:4000). Never use this in browser code.
+ * - NEXT_PUBLIC_API_URL: Fallback only if internal unset (prefer explicit API_INTERNAL_URL in Docker builds).
+ */
 const apiProxyTarget =
   process.env.API_INTERNAL_URL ||
   process.env.NEXT_PUBLIC_API_URL ||

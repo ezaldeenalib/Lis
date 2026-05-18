@@ -3,6 +3,7 @@
  * Subscriptions survive reconnects; pages can subscribe without racing socket setup.
  */
 import { io, Socket } from 'socket.io-client';
+import { isDockerOnlyApiUrl } from '@/lib/docker-internal-hosts';
 
 // ─── Shared event names (mirrors backend realtime.events.ts) ─────────────────
 export const LIS_EVENTS = {
@@ -91,10 +92,20 @@ export function onRealtimeStatusChange(fn: (s: RealtimeConnectionStatus) => void
 
 function resolveWsBase(): string {
   const wsOnly = process.env.NEXT_PUBLIC_WS_URL?.trim();
-  if (wsOnly) return wsOnly.replace(/\/$/, '');
+  if (wsOnly) {
+    if (typeof window !== 'undefined' && isDockerOnlyApiUrl(wsOnly)) {
+      return window.location.origin.replace(/\/$/, '');
+    }
+    return wsOnly.replace(/\/$/, '');
+  }
 
   const configured = process.env.NEXT_PUBLIC_API_URL?.trim();
-  if (configured) return configured.replace(/\/$/, '');
+  if (configured) {
+    if (typeof window !== 'undefined' && isDockerOnlyApiUrl(configured)) {
+      return window.location.origin.replace(/\/$/, '');
+    }
+    return configured.replace(/\/$/, '');
+  }
 
   if (typeof window !== 'undefined') {
     if (process.env.NODE_ENV === 'development') {
