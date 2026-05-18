@@ -11,7 +11,7 @@ import {
   TestTube, Layers, User, Phone, Calendar,
   Zap, Clock, FlaskConical, FileText, CheckCircle2,
   AlertCircle, UserPlus, ChevronRight, Stethoscope,
-  Package, ArrowUpRight, Sparkles,
+  Package, ArrowUpRight,
   Hash, RotateCcw,
 } from 'lucide-react';
 import { api } from '@/lib/api';
@@ -454,12 +454,19 @@ export function NewOrderWizard({ open, onOpenChange, onCreated }: NewOrderWizard
         <div className="shrink-0 border-b border-border bg-card">
           <div className="flex items-center justify-between px-5 py-3.5">
             <div className="flex items-center gap-2.5">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary/70 shadow-sm">
-                <FlaskConical className="h-5 w-5 text-white" />
+              <div
+                className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-teal-500 via-primary to-emerald-700 shadow-md ring-2 ring-white/25 dark:ring-white/10 dark:to-emerald-900"
+                aria-hidden
+              >
+                <Zap className="relative z-[1] h-[18px] w-[18px] text-white drop-shadow" strokeWidth={2.35} fill="rgba(255,255,255,0.12)" />
+                <FlaskConical className="absolute -bottom-0.5 -start-0.5 h-3.5 w-3.5 text-amber-100 opacity-95" strokeWidth={2} />
               </div>
               <div>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <p className="font-bold text-sm text-foreground leading-tight">{stepTitle}</p>
+                  <Badge variant="outline" className="text-[10px] px-1.5 h-5 font-bold border-primary/30 bg-primary/5 text-primary gap-0.5">
+                    <Zap className="h-2.5 w-2.5" strokeWidth={2.5} />طلب سريع
+                  </Badge>
                   <Badge className={cn('text-[10px] px-1.5 h-4 hidden sm:flex items-center gap-1 border', PRI[priority].badge)}>
                     {priority === 'STAT' ? <AlertCircle className="h-2.5 w-2.5" /> :
                      priority === 'URGENT' ? <Zap className="h-2.5 w-2.5" /> :
@@ -1188,7 +1195,7 @@ export function NewOrderWizard({ open, onOpenChange, onCreated }: NewOrderWizard
                   onClick={() => { resetWizard(); setTimeout(() => onOpenChange(true), 50); }}
                 >
                   <RotateCcw className="h-4 w-4" />
-                  طلب جديد
+                  طلب سريع آخر
                 </Button>
               </div>
             </div>
@@ -1230,7 +1237,7 @@ export function NewOrderWizard({ open, onOpenChange, onCreated }: NewOrderWizard
                 ) : step === 4 ? (
                   <><Check className="h-4 w-4" />إنشاء الطلب</>
                 ) : (
-                  <>متابعة<Sparkles className="h-3.5 w-3.5 opacity-70" /></>
+                  <>متابعة<Zap className="h-3.5 w-3.5 opacity-90" strokeWidth={2.35} /></>
                 )}
               </Button>
             </div>

@@ -17,7 +17,7 @@ import {
   ClipboardList,
   User,
   FileText,
-  Sparkles,
+  Zap,
 } from 'lucide-react';
 import { NewOrderWizard } from '@/components/orders/new-order-wizard';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -595,14 +595,24 @@ export default function OrdersPage() {
           {/* Mode toggle */}
           <div className="flex items-center gap-0.5 rounded-lg border border-border bg-muted p-0.5">
             <button
+              type="button"
               onClick={() => handleModeChange('smart')}
               className={cn(
-                'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-semibold transition-all',
-                orderMode === 'smart' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground',
+                'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[11px] sm:text-xs font-semibold transition-all',
+                orderMode === 'smart'
+                  ? 'bg-gradient-to-br from-primary/90 to-emerald-700 text-white shadow-sm ring-1 ring-primary/25 dark:to-emerald-900'
+                  : 'text-muted-foreground hover:text-foreground',
               )}
             >
-              <Sparkles className="h-3.5 w-3.5" />
-              ذكي
+              <Zap
+                className={cn(
+                  'h-3.5 w-3.5 shrink-0',
+                  orderMode === 'smart' ? 'text-amber-200' : '',
+                )}
+                strokeWidth={2.25}
+                aria-hidden
+              />
+              طلب سريع
             </button>
             <button
               onClick={() => handleModeChange('classic')}

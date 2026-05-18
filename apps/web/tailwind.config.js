@@ -94,12 +94,24 @@ module.exports = {
           '0%': { backgroundPosition: '200% 0' },
           '100%': { backgroundPosition: '-200% 0' },
         },
+        /** نبضة ظل خفيفة لزر الإجراء الرئيسي في لوحة التحكم */
+        'dashboard-cta-glow': {
+          '0%, 100%': {
+            boxShadow:
+              '0 14px 40px -12px hsl(var(--primary) / 0.42), 0 0 0 0 hsl(var(--primary) / 0.2)',
+          },
+          '50%': {
+            boxShadow:
+              '0 18px 52px -10px hsl(var(--primary) / 0.55), 0 0 40px 8px hsl(var(--teal) / 0.22)',
+          },
+        },
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
         'fade-in': 'fade-in 0.2s ease-out',
         shimmer: 'shimmer 1.5s infinite',
+        'dashboard-cta-glow': 'dashboard-cta-glow 3s ease-in-out infinite',
       },
     },
   },

@@ -13,7 +13,7 @@ import {
   ArrowLeft,
   TrendingUp,
   FileText,
-  Sparkles,
+  Plus,
 } from 'lucide-react';
 import { NewOrderWizard } from '@/components/orders/new-order-wizard';
 import { useAuthStore } from '@/stores/auth.store';
@@ -107,6 +107,28 @@ const PRIORITY_CLASS: Record<string, string> = {
   URGENT: 'priority-urgent',
   ROUTINE: 'priority-routine',
 };
+
+/** أنبوبة مختبر + علامة زائد */
+function QuickOrderBrandIcon({ className }: { className?: string }) {
+  return (
+    <div
+      className={cn(
+        'relative flex h-16 w-16 shrink-0 items-center justify-center rounded-3xl',
+        'bg-white/18 ring-2 ring-white/40 shadow-inner backdrop-blur-md',
+        className,
+      )}
+      aria-hidden
+    >
+      <TestTube
+        className="relative z-[1] h-9 w-9 text-white drop-shadow-md sm:h-10 sm:w-10"
+        strokeWidth={2.25}
+      />
+      <span className="absolute -top-0.5 -end-0.5 z-[2] flex h-7 w-7 items-center justify-center rounded-full bg-white text-primary shadow-lg ring-2 ring-white/85">
+        <Plus className="h-4 w-4 stroke-[3]" aria-hidden />
+      </span>
+    </div>
+  );
+}
 
 const QUICK_ACTIONS = [
   { href: '/patients', label: 'تسجيل مريض', desc: 'إضافة سجل مريض', icon: Users, color: 'text-teal-600 bg-teal-50 hover:bg-teal-100 dark:text-teal-400 dark:bg-teal-950 dark:hover:bg-teal-900' },
@@ -224,60 +246,81 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Quick actions */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {canCreateOrder ? (
-          <button
-            type="button"
-            onClick={() => setSmartOrderOpen(true)}
-            className={cn(
-              'flex flex-col gap-2.5 rounded-xl border border-border bg-card p-4 text-start transition-all duration-150 card-hover',
-              'text-primary bg-primary/10 hover:bg-primary/20 ring-1 ring-primary/15',
-            )}
-          >
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/50 dark:bg-black/20">
-              <Sparkles className="h-4 w-4 shrink-0" />
-            </div>
-            <div>
-              <p className="text-sm font-bold leading-tight">طلب جديد (ذكي)</p>
-              <p className="text-[11px] opacity-80 mt-0.5">معالج سريع — بدون إعادة تحميل</p>
-            </div>
-          </button>
-        ) : (
-          <Link
-            href="/orders"
-            className={cn(
-              'flex flex-col gap-2.5 rounded-xl border border-border bg-card p-4 transition-all duration-150 card-hover',
-              'text-muted-foreground bg-muted/30 hover:bg-muted/50',
-            )}
-          >
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/50 dark:bg-black/20">
-              <ClipboardList className="h-4 w-4 shrink-0" />
-            </div>
-            <div>
-              <p className="text-sm font-bold leading-tight">الطلبات</p>
-              <p className="text-[11px] opacity-70 mt-0.5">عرض الطلبات</p>
-            </div>
-          </Link>
-        )}
-        {QUICK_ACTIONS.map(({ href, label, desc, icon: Icon, color }) => (
-          <Link
-            key={href}
-            href={href}
-            className={cn(
-              'flex flex-col gap-2.5 rounded-xl border border-border bg-card p-4 transition-all duration-150 card-hover',
-              color
-            )}
-          >
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/50 dark:bg-black/20">
-              <Icon className="h-4 w-4 shrink-0" />
-            </div>
-            <div>
-              <p className="text-sm font-bold leading-tight">{label}</p>
-              <p className="text-[11px] opacity-70 mt-0.5">{desc}</p>
-            </div>
-          </Link>
-        ))}
+      {/* إجراء رئيسي: طلب سريع */}
+      <div className="space-y-3">
+        <div className="flex justify-center px-0.5">
+          {canCreateOrder ? (
+            <button
+              type="button"
+              onClick={() => setSmartOrderOpen(true)}
+              className={cn(
+                'group relative isolate w-full max-w-sm overflow-hidden rounded-[1.25rem] border border-white/25 text-white shadow-xl sm:max-w-md',
+                'bg-gradient-to-br from-teal-500 via-primary to-emerald-800',
+                'px-4 py-4 sm:px-5 sm:py-4',
+                'backdrop-blur-[2px] sm:backdrop-blur-none',
+                'shadow-[0_12px_40px_-12px_hsl(var(--primary)/0.45)]',
+                'animate-dashboard-cta-glow motion-reduce:animate-none',
+                'transition-[transform,box-shadow] duration-300 ease-out',
+                'hover:scale-[1.025] hover:animate-none hover:shadow-[0_22px_56px_-12px_hsl(var(--primary)/0.52),0_0_52px_10px_hsl(var(--teal)/0.2)] motion-reduce:hover:scale-100',
+                'active:scale-[0.98] motion-reduce:active:scale-100',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+                'dark:from-teal-600 dark:via-primary dark:to-emerald-950 dark:border-white/15',
+              )}
+            >
+              <span className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.22)_0%,transparent_45%,transparent_55%,rgba(255,255,255,0.06)_100%)] opacity-90" />
+              <span className="pointer-events-none absolute -start-12 -top-16 h-40 w-40 rounded-full bg-white/[0.14] blur-3xl" />
+              <span className="pointer-events-none absolute -bottom-14 -end-10 h-36 w-36 rounded-full bg-emerald-300/22 blur-3xl" />
+              <span className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/45 to-transparent" />
+
+              <div className="relative flex flex-row items-center justify-center gap-3 sm:gap-4">
+                <QuickOrderBrandIcon className="h-14 w-14 rounded-2xl shadow-lg shadow-black/10" />
+                <p className="text-lg font-extrabold leading-tight tracking-tight text-white drop-shadow-sm sm:text-xl">
+                  طلب سريع
+                </p>
+                <span className="hidden sm:flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/14 ring-1 ring-white/25 transition-all duration-300 group-hover:bg-white/22 group-hover:ring-white/35">
+                  <ArrowLeft className="h-5 w-5 text-white rtl:rotate-180" aria-hidden />
+                </span>
+              </div>
+            </button>
+          ) : (
+            <Link
+              href="/orders"
+              className={cn(
+                'flex w-full max-w-xl flex-col items-center gap-2.5 rounded-xl border border-border bg-card p-4 text-center transition-all duration-150 card-hover sm:max-w-md',
+                'text-muted-foreground bg-muted/30 hover:bg-muted/50',
+              )}
+            >
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/50 dark:bg-black/20">
+                <ClipboardList className="h-4 w-4 shrink-0" />
+              </div>
+              <div>
+                <p className="text-sm font-bold leading-tight">الطلبات</p>
+                <p className="text-[11px] opacity-70 mt-0.5">عرض الطلبات</p>
+              </div>
+            </Link>
+          )}
+        </div>
+
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          {QUICK_ACTIONS.map(({ href, label, desc, icon: Icon, color }) => (
+            <Link
+              key={href}
+              href={href}
+              className={cn(
+                'flex flex-col gap-2.5 rounded-xl border border-border bg-card p-4 transition-all duration-150 card-hover',
+                color
+              )}
+            >
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/50 dark:bg-black/20">
+                <Icon className="h-4 w-4 shrink-0" />
+              </div>
+              <div>
+                <p className="text-sm font-bold leading-tight">{label}</p>
+                <p className="text-[11px] opacity-70 mt-0.5">{desc}</p>
+              </div>
+            </Link>
+          ))}
+        </div>
       </div>
 
       {/* Stats */}

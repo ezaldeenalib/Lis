@@ -28,6 +28,8 @@ COPY package.json package-lock.json* ./
 COPY tsconfig.base.json nx.json ./
 COPY apps/web ./apps/web
 COPY libs/shared ./libs/shared
+# Next.js يتوقع مجلد public؛ CREATE إذا غير موجود ليجوز COPY من المرحلة runner
+RUN mkdir -p apps/web/public
 
 ARG NEXT_PUBLIC_API_URL=http://localhost:4000
 ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
