@@ -1,4 +1,16 @@
-version: '3.8'
+# =============================================================================
+# LIS SaaS — production Compose stack (PostgreSQL, Redis, API, Web)
+# -----------------------------------------------------------------------------
+# Build : docker compose build --no-cache
+# Up    : docker compose up -d
+# Logs  : docker compose logs -f api web
+#
+# Health:
+#   curl -sf http://localhost:4000/api/v1/health/live
+#   curl -sf -o /dev/null http://localhost:3000/
+#
+# Override secrets via `.env` in this directory (do not commit real secrets).
+# =============================================================================
 
 services:
   postgres:
@@ -6,37 +18,45 @@ services:
     container_name: lis_postgres
     restart: unless-stopped
     ports:
-      - '5432:5432'
+      - '${POSTGRES_PORT:-5432}:5432'
     environment:
-      POSTGRES_USER: lis_user
-      POSTGRES_PASSWORD: lis_password
-      POSTGRES_DB: lis_db
+      POSTGRES_USER: ${POSTGRES_USER:-lis_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-lis_password}
+      POSTGRES_DB: ${POSTGRES_DB:-lis_db}
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      - lis
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U lis_user -d lis_db']
+      test: ['CMD-SHELL', 'pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"']
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 10s
 
   redis:
     image: redis:7-alpine
     container_name: lis_redis
     restart: unless-stopped
     ports:
-      - '6379:6379'
+      - '${REDIS_PORT:-6379}:6379'
     volumes:
       - redis_data:/data
+    command: ['redis-server', '--appendonly', 'yes']
+    networks:
+      - lis
     healthcheck:
       test: ['CMD', 'redis-cli', 'ping']
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 5s
 
   api:
     build:
       context: .
       dockerfile: apps/api/Dockerfile
+    image: lis-api:latest
     container_name: lis_api
     restart: unless-stopped
     entrypoint: ['/usr/local/bin/docker-api-entrypoint.sh']
@@ -44,25 +64,30 @@ services:
     ports:
       - '${API_PORT:-4000}:4000'
     environment:
-      DATABASE_URL: postgresql://lis_user:lis_password@postgres:5432/lis_db?schema=public
+      NODE_ENV: production
+      DATABASE_URL: ${DATABASE_URL:-postgresql://lis_user:lis_password@postgres:5432/lis_db?schema=public}
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      JWT_SECRET: ${JWT_SECRET:-dev-secret-key-change-in-production}
-      JWT_EXPIRATION: 24h
+      JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
+      JWT_EXPIRATION: ${JWT_EXPIRATION:-24h}
       API_PORT: 4000
-      API_HOST: 0.0.0.0
-      PUBLIC_HOST: ${PUBLIC_HOST:-142.132.189.60}
-      WEB_URL: ${WEB_URL:-http://142.132.189.60:3000}
-      CORS_ORIGINS: ${CORS_ORIGINS:-http://142.132.189.60:3000}
-      NODE_ENV: production
-      # Prisma: set RUN_MIGRATIONS_ON_BOOT=0 if you run `npm run db:deploy` in a separate Job.
+      API_HOST: ${API_HOST:-0.0.0.0}
+      PUBLIC_HOST: ${PUBLIC_HOST:-localhost}
+      WEB_URL: ${WEB_URL:-http://localhost:3000}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
       RUN_MIGRATIONS_ON_BOOT: ${RUN_MIGRATIONS_ON_BOOT:-1}
       PRISMA_SCHEMA_PATH: libs/database/prisma/schema.prisma
-      # WhatsApp: mount WHATSAPP_AUTH_DATA_PATH; disable on replicas with WHATSAPP_ENABLED=0
       WHATSAPP_ENABLED: ${WHATSAPP_ENABLED:-1}
       WHATSAPP_AUTH_DATA_PATH: /var/lib/lis/whatsapp-auth
     volumes:
       - whatsapp_auth_data:/var/lib/lis/whatsapp-auth
+    networks:
+      - lis
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     healthcheck:
       test:
         [
@@ -74,32 +99,47 @@ services:
       interval: 20s
       timeout: 5s
       retries: 5
-      start_period: 40s
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
+      start_period: 60s
 
   web:
     build:
       context: .
       dockerfile: apps/web/Dockerfile
       args:
-        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://142.132.189.60:4000}
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:4000}
+    image: lis-web:latest
     container_name: lis_web
     restart: unless-stopped
     command: ['node', 'apps/web/server.js']
     ports:
       - '${WEB_PORT:-3000}:3000'
     environment:
-      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://142.132.189.60:4000}
-      API_INTERNAL_URL: http://api:4000
-      HOSTNAME: 0.0.0.0
       NODE_ENV: production
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:4000}
+      API_INTERNAL_URL: ${API_INTERNAL_URL:-http://api:4000}
+      HOSTNAME: 0.0.0.0
+      PORT: 3000
+    networks:
+      - lis
     depends_on:
       api:
         condition: service_healthy
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "require('http').get('http://127.0.0.1:3000/',(r)=>{r.resume();r.on('end',()=>process.exit(r.statusCode&&r.statusCode<500?0:1));}).on('error',()=>process.exit(1));",
+        ]
+      interval: 25s
+      timeout: 5s
+      retries: 5
+      start_period: 90s
+
+networks:
+  lis:
+    driver: bridge
 
 volumes:
   postgres_data:

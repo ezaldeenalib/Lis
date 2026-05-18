@@ -1,3 +1,5 @@
+const path = require('path');
+
 /** @type {import('next').NextConfig} */
 const apiProxyTarget =
   process.env.API_INTERNAL_URL ||
@@ -6,8 +8,20 @@ const apiProxyTarget =
 
 const nextConfig = {
   reactStrictMode: process.env.NODE_ENV === 'production',
+
+  /** Required for Docker: emits `.next/standalone` with `apps/web/server.js`. */
   output: 'standalone',
+
+  /**
+   * Monorepo root for file tracing — ensures standalone bundle includes workspace
+   * deps (`libs/shared`, hoisted `node_modules`) correctly.
+   */
+  experimental: {
+    outputFileTracingRoot: path.join(__dirname, '../..'),
+  },
+
   transpilePackages: ['@lis/shared'],
+
   async rewrites() {
     const base = apiProxyTarget.replace(/\/$/, '');
     return [
@@ -19,7 +33,6 @@ const nextConfig = {
         source: '/platform/:path*',
         destination: `${base}/platform/:path*`,
       },
-      // Socket.IO (Engine.IO) — lets clients use same-origin in dev if NEXT_PUBLIC_API_URL is unset
       {
         source: '/socket.io/:path*',
         destination: `${base}/socket.io/:path*`,
