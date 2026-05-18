@@ -108,23 +108,20 @@ const PRIORITY_CLASS: Record<string, string> = {
   ROUTINE: 'priority-routine',
 };
 
-/** أنبوبة مختبر + علامة زائد */
+/** أنبوبة مختبر + زائد — صف أفقي داخل الإطار (بدون تراكب زوايا) */
 function QuickOrderBrandIcon({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        'relative flex h-16 w-16 shrink-0 items-center justify-center rounded-3xl',
+        'relative flex h-14 min-h-14 min-w-[5.35rem] shrink-0 items-center justify-center gap-2 rounded-2xl px-2.5 sm:h-[3.75rem] sm:min-h-[3.75rem] sm:min-w-[6.25rem] sm:gap-2.5 sm:px-3',
         'bg-white/18 ring-2 ring-white/40 shadow-inner backdrop-blur-md',
         className,
       )}
       aria-hidden
     >
-      <TestTube
-        className="relative z-[1] h-9 w-9 text-white drop-shadow-md sm:h-10 sm:w-10"
-        strokeWidth={2.25}
-      />
-      <span className="absolute -top-0.5 -end-0.5 z-[2] flex h-7 w-7 items-center justify-center rounded-full bg-white text-primary shadow-lg ring-2 ring-white/85">
-        <Plus className="h-4 w-4 stroke-[3]" aria-hidden />
+      <TestTube className="h-8 w-8 shrink-0 text-white drop-shadow-md sm:h-9 sm:w-9" strokeWidth={2.25} />
+      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white text-primary shadow-sm ring-1 ring-white/80 dark:bg-white dark:text-primary dark:ring-white/50">
+        <Plus className="h-3.5 w-3.5 stroke-[2.5]" aria-hidden />
       </span>
     </div>
   );
@@ -273,7 +270,7 @@ export default function DashboardPage() {
               <span className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/45 to-transparent" />
 
               <div className="relative flex flex-row items-center justify-center gap-3 sm:gap-4">
-                <QuickOrderBrandIcon className="h-14 w-14 rounded-2xl shadow-lg shadow-black/10" />
+                <QuickOrderBrandIcon className="shadow-lg shadow-black/10" />
                 <p className="text-lg font-extrabold leading-tight tracking-tight text-white drop-shadow-sm sm:text-xl">
                   طلب سريع
                 </p>
