@@ -78,9 +78,9 @@ services:
       JWT_EXPIRATION: ${JWT_EXPIRATION:-24h}
       API_PORT: 4000
       API_HOST: ${API_HOST:-0.0.0.0}
-      PUBLIC_HOST: ${PUBLIC_HOST:-localhost}
-      WEB_URL: ${WEB_URL:-http://localhost:3000}
-      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000,http://142.132.189.60:3000}
+      PUBLIC_HOST: ${PUBLIC_HOST:-142.132.189.60}
+      WEB_URL: ${WEB_URL:-http://142.132.189.60:3000}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000,http://127.0.0.1:3000,http://142.132.189.60:3000}
       RUN_MIGRATIONS_ON_BOOT: ${RUN_MIGRATIONS_ON_BOOT:-1}
       PRISMA_SCHEMA_PATH: libs/database/prisma/schema.prisma
       MIGRATE_MAX_ATTEMPTS: ${MIGRATE_MAX_ATTEMPTS:-30}

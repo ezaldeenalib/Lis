@@ -3,16 +3,16 @@ import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { IoAdapter } from '@nestjs/platform-socket.io';
 import { AppModule } from './app.module';
-import { resolveCorsOrigins } from './cors-origins';
+import { createCorsOriginDelegate, resolveCorsOriginsList } from './cors-origins';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   app.useWebSocketAdapter(new IoAdapter(app));
 
-  const corsOrigins = resolveCorsOrigins();
+  const corsOrigins = resolveCorsOriginsList();
   app.enableCors({
-    origin: corsOrigins,
+    origin: createCorsOriginDelegate(),
     credentials: true,
     methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'X-Requested-With'],
@@ -44,6 +44,6 @@ async function bootstrap() {
   console.log(`🔬 LIS API listening on ${host}:${port}`);
   console.log(`   → http://${displayHost}:${port}`);
   console.log(`📚 Swagger: http://${displayHost}:${port}/docs`);
-  console.log(`   CORS: ${Array.isArray(corsOrigins) ? corsOrigins.join(', ') : corsOrigins}`);
+  console.log(`   CORS: ${corsOrigins.join(', ')}`);
 }
 bootstrap();

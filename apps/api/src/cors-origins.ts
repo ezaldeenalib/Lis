@@ -1,12 +1,18 @@
 /**
- * Allowed CORS origins: localhost dev + WEB_URL + PUBLIC_HOST-derived + CORS_ORIGINS.
- * Trailing slashes stripped so browser Origin matches exactly.
+ * Allowed CORS origins: localhost dev + WEB_URL + PUBLIC_HOST + CORS_ORIGINS.
  */
 function normalizeOrigin(url: string): string {
   return url.trim().replace(/\/$/, '');
 }
 
-export function resolveCorsOrigins(): string | string[] {
+/** Built-in origins when env is missing or still points at localhost on a public server */
+const FALLBACK_ORIGINS = [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://142.132.189.60:3000',
+];
+
+export function resolveCorsOriginsList(): string[] {
   const fromList = (process.env.CORS_ORIGINS ?? '')
     .split(',')
     .map((s) => normalizeOrigin(s))
@@ -24,18 +30,37 @@ export function resolveCorsOrigins(): string | string[] {
     }
   }
 
-  /** Always allow local Next dev alongside production / LAN URLs */
-  const defaults = ['http://localhost:3000'];
-
-  const merged = [
+  return [
     ...new Set([
-      ...defaults,
+      ...FALLBACK_ORIGINS,
       ...(webUrl ? [normalizeOrigin(webUrl)] : []),
       ...fromPublic,
       ...fromList,
     ]),
   ];
+}
 
-  if (merged.length === 1) return merged[0];
-  return merged;
+/** Dynamic origin check — reflects the request Origin when allowed (required with credentials). */
+export function createCorsOriginDelegate(): (
+  origin: string | undefined,
+  callback: (err: Error | null, allow?: boolean) => void,
+) => void {
+  const allowed = new Set(resolveCorsOriginsList());
+
+  return (origin, callback) => {
+    if (!origin) {
+      callback(null, true);
+      return;
+    }
+    if (allowed.has(normalizeOrigin(origin))) {
+      callback(null, true);
+      return;
+    }
+    callback(null, false);
+  };
+}
+
+/** @deprecated use resolveCorsOriginsList — kept for logging */
+export function resolveCorsOrigins(): string[] {
+  return resolveCorsOriginsList();
 }

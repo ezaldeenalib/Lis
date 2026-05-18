@@ -4,6 +4,7 @@
  */
 import { io, Socket } from 'socket.io-client';
 import { isDockerOnlyApiUrl } from '@/lib/docker-internal-hosts';
+import { shouldUseSameOriginApiProxy } from '@/lib/resolve-api-base';
 
 // ─── Shared event names (mirrors backend realtime.events.ts) ─────────────────
 export const LIS_EVENTS = {
@@ -101,8 +102,10 @@ function resolveWsBase(): string {
 
   const configured = process.env.NEXT_PUBLIC_API_URL?.trim();
   if (configured) {
-    if (typeof window !== 'undefined' && isDockerOnlyApiUrl(configured)) {
-      return window.location.origin.replace(/\/$/, '');
+    if (typeof window !== 'undefined') {
+      if (isDockerOnlyApiUrl(configured) || shouldUseSameOriginApiProxy(configured)) {
+        return window.location.origin.replace(/\/$/, '');
+      }
     }
     return configured.replace(/\/$/, '');
   }
